@@ -38,8 +38,16 @@ fun newPerspectiveCamera(fl : Double, aspect : Double, minZ : Double, maxZ : Dou
     return Camera(js("(function(fl,a,nz,xz) { return new THREE.PerspectiveCamera(fl, a, nz, xz) })")(fl, aspect, minZ, maxZ))
 }
 
-fun newColladaLoader() : dynamic {
-    return js("new THREE.ColladaLoader()")
+fun newJSONLoader() : dynamic {
+    return js("new THREE.ObjectLoader()")
+}
+
+fun isSkinnedMesh(child : dynamic) : Boolean {
+    return js("(function(child) { return child instanceof THREE.SkinnedMesh })")(child)
+}
+
+fun newAnimation(child : dynamic,animation : dynamic) : dynamic {
+    return js("(function(child,animation) { return new THREE.Animation(child,animation) })")(child,animation)
 }
 
 class Scene(o : dynamic) {
@@ -216,14 +224,16 @@ class Hero : InScene {
     var collada : dynamic = null
 
     init {
-        val loader = newColladaLoader()
-        loader.options.convertUpAxis = true
-        loader.load("KolchakRig.dae", { collada ->
+        val loader = newJSONLoader()
+        console.log("loader",loader)
+        loader.load("SkinnerRig1x1.json", { collada ->
+            console.log("loaded", collada)
             this.collada = collada
             val holderGroup = newGroup()
-            holderGroup.o.add(collada.scene)
-            holderGroup.o.position.y = 1.0
+            holderGroup.o.add(collada)
+            holderGroup.o.position.y = 0.0
             holderGroup.o.position.z = 1.0
+            holderGroup.o.rotation.y = Math.PI / 2.0
             group.add(holderGroup)
         })
         group.o.position.y = floorHeight
