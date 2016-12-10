@@ -149,19 +149,20 @@ class Floor(number : Int) : InScene {
         floor.o.position.z = 1.0
         group.add(floor)
         group.o.position.y = number * floorHeight
-        doors = (0..10).map({ n ->
+        doors = (0..8).map({ n ->
             val d = newGroup()
             val plate = newMesh(doorGeom, doorMaterial)
+            plate.o.position.x = 1.0
             plate.o.position.y = 0.75
             plate.o.position.z = 0.1
             val handle = newMesh(doorHandleGeom, doorHandleMaterial)
-            handle.o.position.x = 0.4
+            handle.o.position.x = 1.4
             handle.o.position.y = 0.75
             handle.o.position.z = 0.15
             d.add(plate)
             d.add(handle)
-            val elevatorBump = if (n < 6) { 1.0 } else { 0.0 }
-            d.o.position.x = (n - 5.0 - elevatorBump) * 4.0
+            val elevatorBump = if (n < 5) { 1.0 } else { 0.0 }
+            d.o.position.x = (n - 4.0 - elevatorBump) * 4.0
             d
         }).toMutableList()
         doors.forEach({ d -> group.add(d) })
