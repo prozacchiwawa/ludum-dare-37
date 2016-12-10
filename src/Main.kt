@@ -104,7 +104,9 @@ class GameUpdateMessage {
 class Group(o : dynamic) {
     val o = o
     fun add(m : Mesh) { o.add(m.o) }
+    fun add(m : Group) { o.add(m.o) }
     fun remove(m : Mesh) { o.remove(m.o) }
+    fun remove(m : Group) { o.remove(m.o) }
 }
 
 fun newGroup() : Group {
@@ -119,14 +121,35 @@ class Floor(number : Int) {
     val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
     val floorMaterial = newMeshLambertMaterial(0x006600)
     val floor = newMesh(floorGeom, floorMaterial)
+    val doorGeom = newBoxGeometry(1.0, 1.5, 0.15)
+    val doorMaterial = newMeshLambertMaterial(0x000055)
+    val doorHandleGeom = newBoxGeometry(0.1, 0.1, 0.1)
+    val doorHandleMaterial = newMeshLambertMaterial(0xffffff)
+
+    var doors : MutableList<Group> = mutableListOf()
     val group = newGroup()
+
     init {
         backWall.o.position.y = 1.0
-        backWall.o.position.z = 1.0
         floor.o.position.z = 1.0
         group.add(backWall)
         group.add(floor)
         group.o.position.y = number * 2.0
+        doors = (0..10).map({ n ->
+            val d = newGroup()
+            val plate = newMesh(doorGeom, doorMaterial)
+            plate.o.position.y = 0.75
+            plate.o.position.z = 0.1
+            val handle = newMesh(doorHandleGeom, doorHandleMaterial)
+            handle.o.position.x = 0.4
+            handle.o.position.y = 0.75
+            handle.o.position.z = 0.15
+            d.add(plate)
+            d.add(handle)
+            d.o.position.x = (n - 6.0) * 4.0
+            d
+        }).toMutableList()
+        doors.forEach({ d -> group.add(d) })
     }
     fun addToScene(scene : Scene) {
         scene.add(group)
@@ -177,8 +200,8 @@ class GameContainer() {
     fun update(m : GameUpdateMessage) {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
-            cameraY = (cameraY + (targetCameraY * m.time)) / (1.0 + m.time)
-            camera.o.position.set( 0, cameraY, 10.0 )
+            cameraY = (cameraY + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
+            camera.o.position.set( 0, cameraY, 15.0 )
             camera.o.lookAt( 0, 1.0, 0.0 )
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
