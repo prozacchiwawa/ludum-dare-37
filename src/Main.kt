@@ -73,7 +73,7 @@ enum class GameUpdateMessageTag {
 }
 
 enum class Key(v : Int) {
-    None(0), Space(32);
+    None(0), Space(32), C('C'.toInt()), Left(37), Up(38), Right(39), Down(40);
     val v = v
 }
 
@@ -180,11 +180,45 @@ class Hero : InScene {
     val mesh = newMesh(box, material)
     val group = newGroup()
 
+    var moving = false
+    var moveexpire = 0.0
+    var movedir = 0.0
+    val movetime = 0.1
+    var movespeed = 2.0
+
     init {
         mesh.o.position.y = 0.65
         group.o.position.y = 2.0
         group.o.position.z = 1.0
         group.add(mesh)
+    }
+
+    fun inElevator() : Boolean {
+        return group.o.position.z < 0
+    }
+
+    fun beginMove(x : Double) {
+        moving = true
+        moveexpire = -1.0
+        movedir = x
+    }
+
+    fun endMove() {
+        moving = false
+        moveexpire = movetime
+    }
+
+    fun update(t : Double) {
+        if (movedir != 0.0) {
+            group.o.position.x += movedir * t * movespeed
+        }
+        if (moveexpire > 0) {
+            moveexpire = Math.max(moveexpire - t, 0.0)
+            if (moveexpire == 0.0) {
+                movedir = 0.0
+                moveexpire = -1.0
+            }
+        }
     }
 
     override fun addToScene(scene : Scene) {
@@ -246,6 +280,10 @@ class Elevator(min : Int, max : Int) : InScene {
         }
     }
 
+    fun isOpen() : Boolean {
+        return open > 0.0
+    }
+
     fun update(time : Double) {
         val targetY = floor * floorHeight
         if (targetY != group.o.position.y) {
@@ -276,9 +314,8 @@ fun sigmoid(x : Double) : Double {
     return 1.0 / (1.0 + Math.exp(-x))
 }
 
-val codemap : Map<Int, Key> = hashMapOf(
-        Pair<Int,Key>(Key.Space.v, Key.Space)
-)
+val codemap : Map<Int, Key> =
+        listOf(Key.C, Key.Space, Key.Left, Key.Up, Key.Down, Key.Right).map({ k -> Pair<Int,Key>(k.v,k) }).toMap()
 
 class GameContainer() {
     val light = newLight(0xeeeeee)
@@ -324,14 +361,50 @@ class GameContainer() {
     fun update(m : GameUpdateMessage) {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
+            hero.update(m.time)
             elevator.update(m.time)
+            if (hero.inElevator()) {
+                hero.group.o.position.y = elevator.group.o.position.y
+            }
             camera.o.position.x = (camera.o.position.x + (targetCameraX * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
             camera.o.position.y = (camera.o.position.y + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
             camera.o.lookAt( 0, 1.0, 0.0 )
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
-            if (m.key == Key.Space) {
-                elevator.callButton(heroCurrentFloor())
+            when (m.key) {
+                Key.C -> {
+                    console.log("call elevator:",hero.group.o.position.x)
+                    if (hero.group.o.position.x >= -1 &&
+                        hero.group.o.position.x <= 1) {
+                        elevator.callButton(heroCurrentFloor())
+                    }
+                }
+                Key.Up -> {
+                    console.log("enter elevator:",elevator.isOpen(), hero.inElevator())
+                    if (hero.group.o.position.x >= -1 &&
+                            hero.group.o.position.x <= 1 &&
+                            elevator.isOpen() &&
+                            !hero.inElevator()) {
+                        hero.group.o.position.x = 0.0
+                        hero.group.o.position.z = -1.5
+                    }
+                }
+                Key.Down -> {
+                    console.log("leave elevator:",hero.group.o.position.x)
+                    if (elevator.isOpen() && hero.inElevator()) {
+                        hero.group.o.position.x = 0.0
+                        hero.group.o.position.z = 0.0
+                    }
+                }
+                Key.Left -> { if (!hero.inElevator()) { hero.beginMove(-1.0) } }
+                Key.Right -> { if (!hero.inElevator()) { hero.beginMove(1.0) } }
+                else -> { }
+            }
+        } else if (m.tag == GameUpdateMessageTag.KeyUp) {
+            when (m.key) {
+                Key.Left -> { hero.endMove() }
+                Key.Right -> { hero.endMove() }
+                else -> { }
             }
         }
         targetCameraX = hero.group.o.position.x
@@ -383,6 +456,16 @@ fun main(args: Array<String>) {
             val key = codemap[evt.keyCode]
             if (key != null) {
                 game.update(GameUpdateMessage(GameUpdateMessageTag.KeyDown, key))
+            } else {
+                console.log("keydown unknown", evt.keyCode)
+            }
+        })
+        kotlin.browser.window.addEventListener("keyup", { evt : dynamic ->
+            val key = codemap[evt.keyCode]
+            if (key != null) {
+                game.update(GameUpdateMessage(GameUpdateMessageTag.KeyUp, key))
+            } else {
+                console.log("keyup unknown", evt.keyCode)
             }
         })
 
