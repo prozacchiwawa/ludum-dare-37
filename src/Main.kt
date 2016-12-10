@@ -197,6 +197,10 @@ class Hero : InScene {
         return group.o.position.z < 0
     }
 
+    fun onFloor() : Int {
+        return Math.round(group.o.position.y / floorHeight)
+    }
+
     fun beginMove(x : Double) {
         moving = true
         moveexpire = -1.0
@@ -257,7 +261,7 @@ class Elevator(min : Int, max : Int) : InScene {
         elevatorDoor.o.position.z = 0.0
         group.add(elevatorBack)
         group.add(elevatorFloor)
-        group.o.position.y = 2.0
+        group.o.position.y = floorHeight
     }
 
     override fun addToScene(scene : Scene) {
@@ -278,6 +282,10 @@ class Elevator(min : Int, max : Int) : InScene {
                 open = openTime
             }
         }
+    }
+
+    fun onFloor() : Int {
+        return Math.round(group.o.position.y / floorHeight)
     }
 
     fun isOpen() : Boolean {
@@ -384,6 +392,7 @@ class GameContainer() {
                     if (hero.group.o.position.x >= -1 &&
                             hero.group.o.position.x <= 1 &&
                             elevator.isOpen() &&
+                            elevator.onFloor() == hero.onFloor() &&
                             !hero.inElevator()) {
                         hero.group.o.position.x = 0.0
                         hero.group.o.position.z = -1.5
