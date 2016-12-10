@@ -408,7 +408,7 @@ class GameContainer() {
             }
         }
         targetCameraX = hero.group.o.position.x
-        targetCameraY = hero.group.o.position.y
+        targetCameraY = hero.group.o.position.y + (floorHeight / 2.0)
     }
 }
 
