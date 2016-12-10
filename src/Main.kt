@@ -173,7 +173,6 @@ class Floor(number : Int) : InScene {
     fun nearDoor(x : Double) : Int? {
         val res = doors.mapIndexedNotNull({ i, doorGroup ->
             val res = doorGroup.o.position.x + 1.1 < x && doorGroup.o.position.x + 1.6 > x
-            console.log("door",doorGroup.o.position.x,"with",x,"res",res)
             return if (res) { i } else { null }
         }).firstOrNull()
         return res
