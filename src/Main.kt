@@ -222,9 +222,11 @@ class Hero : InScene {
             this.collada = collada
             val holderGroup = newGroup()
             holderGroup.o.add(collada.scene)
-            holderGroup.o.position.y = floorHeight + 1.0
+            holderGroup.o.position.y = 1.0
+            holderGroup.o.position.z = 1.0
             group.add(holderGroup)
         })
+        group.o.position.y = floorHeight
     }
 
     fun inElevator() : Boolean {
