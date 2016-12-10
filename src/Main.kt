@@ -115,7 +115,12 @@ fun newGroup() : Group {
 
 val floorHeight = 2.0
 
-class Floor(number : Int) {
+interface InScene {
+    fun addToScene(scene : Scene)
+    fun removeFromScene(scene : Scene)
+}
+
+class Floor(number : Int) : InScene {
     val number = number
     val backWallGeom = newBoxGeometry(20.0, floorHeight, 0.2)
     val backWallMaterial = newMeshLambertMaterial(0xf2e9c4)
@@ -161,10 +166,35 @@ class Floor(number : Int) {
         }).toMutableList()
         doors.forEach({ d -> group.add(d) })
     }
-    fun addToScene(scene : Scene) {
+    override fun addToScene(scene : Scene) {
         scene.add(group)
     }
-    fun removeFromScene(scene : Scene) {
+    override fun removeFromScene(scene : Scene) {
+        scene.remove(group)
+    }
+}
+
+class Hero : InScene {
+    var x = 0.0
+    var y = 0.0
+    var z = 0.0
+    val box = newBoxGeometry(0.3, 1.3, 0.4)
+    val material = newMeshLambertMaterial(0x8caadb)
+    val mesh = newMesh(box, material)
+    val group = newGroup()
+
+    init {
+        mesh.o.position.y = 0.65
+        group.o.position.y = 2.0
+        group.o.position.z = 1.0
+        group.add(mesh)
+    }
+
+    override fun addToScene(scene : Scene) {
+        scene.add(group)
+    }
+
+    override fun removeFromScene(scene: Scene) {
         scene.remove(group)
     }
 }
@@ -178,10 +208,6 @@ val codemap : Map<Int, Key> = hashMapOf(
 )
 
 class GameContainer() {
-    val geom = newBoxGeometry(0.5,0.5,0.5)
-    val material = newMeshLambertMaterial(0xff0000)
-    val mesh = newMesh(geom,material)
-
     val light = newLight(0xeeeeee)
 
     val aspect =
@@ -196,14 +222,17 @@ class GameContainer() {
     var lastMove = 0.0
     var targetFloor = 0
 
+    val hero = Hero()
+
     fun addToScene(scene : Scene) {
-        scene.add(mesh)
         scene.add(light)
+        hero.addToScene(scene)
         floors.forEach { f -> f.addToScene(scene) }
     }
 
     fun removeFromScene(scene : Scene) {
-        scene.remove(mesh)
+        scene.remove(light)
+        hero.removeFromScene(scene)
         floors.forEach { f -> f.removeFromScene(scene) }
     }
 
