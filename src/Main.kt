@@ -293,8 +293,6 @@ class GameContainer() {
     var targetCameraY = 3.0
 
     var curTime = 0.0
-    var lastMove = 0.0
-    var targetFloor = 0
 
     val hero = Hero()
     val elevator = Elevator(1, 6)
