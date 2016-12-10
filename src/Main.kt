@@ -6,28 +6,58 @@ package org.sample
 
 import java.util.*
 
-fun newBoxGeometry(x : Double, y : Double, z : Double) {
-    return js("(function (x,y,z) { return new THREE.BoxGeometry(x,y,z); })")(x,y,z)
+class Geometry(o : dynamic) {
+    val o = o
 }
 
-fun newMeshLambertMaterial(color : Int) {
-    return js("(function (c) { return new THREE.MeshLambertMaterial({color: c}); })")(color)
+fun newBoxGeometry(x : Double, y : Double, z : Double) : Geometry {
+    return Geometry(js("(function (x,y,z) { return new THREE.BoxGeometry(x,y,z); })")(x,y,z))
 }
 
-fun newMesh(geom : dynamic, material : dynamic) : dynamic {
-    return js("(function(g,m) { return new THREE.Mesh(g,m); })")(geom,material)
+class Material(o : dynamic) {
+    val o = o
 }
 
-fun newPerspectiveCamera(fl : Double, aspect : Double, minZ : Double, maxZ : Double) : dynamic {
-    return js("(function(fl,a,nz,xz) { return new THREE.PerspectiveCamera(fl, a, nz, xz) })")(fl, aspect, minZ, maxZ);
+fun newMeshLambertMaterial(color : Int) : Material {
+    return Material(js("(function (c) { return new THREE.MeshLambertMaterial({color: c}); })")(color))
 }
 
-fun newScene() : dynamic {
-    return js("new THREE.Scene()")
+class Mesh(o : dynamic) {
+    val o = o
 }
 
-fun newLight(color : Int) : dynamic {
-    return js("(function(c) { return new THREE.PointLight( c ) })")(color)
+fun newMesh(geom : dynamic, material : dynamic) : Mesh {
+    return Mesh(js("(function(g,m) { return new THREE.Mesh(g,m); })")(geom.o,material.o))
+}
+
+class Camera(o : dynamic) {
+    val o = o
+}
+
+fun newPerspectiveCamera(fl : Double, aspect : Double, minZ : Double, maxZ : Double) : Camera {
+    return Camera(js("(function(fl,a,nz,xz) { return new THREE.PerspectiveCamera(fl, a, nz, xz) })")(fl, aspect, minZ, maxZ))
+}
+
+class Scene(o : dynamic) {
+    val o = o
+    fun add(m : Mesh) { o.add(m.o) }
+    fun add(l : Light) { o.add(l.o) }
+    fun add(g : Group) { o.add(g.o) }
+    fun remove(m : Mesh) { o.remove(m.o) }
+    fun remove(l : Light) { o.remove(l.o) }
+    fun remove(g : Group) { o.remove(g.o) }
+}
+
+fun newScene() : Scene {
+    return Scene(js("new THREE.Scene()"))
+}
+
+class Light(o : dynamic) {
+    val o = o
+}
+
+fun newLight(color : Int) : Light {
+    return Light(js("(function(c) { return new THREE.PointLight( c ) })")(color))
 }
 
 fun getCurTime() : Double {
@@ -71,44 +101,90 @@ class GameUpdateMessage {
     }
 }
 
-class PlayState(n : Double, inc : Double) {
-    val n : Double = n
-    val inc : Double = inc
-    fun update(m : GameUpdateMessage) : PlayState {
-        when (m.tag) {
-            GameUpdateMessageTag.NewFrame -> {
-                return PlayState(n + (inc * m.time), inc)
-            }
-            GameUpdateMessageTag.KeyDown -> {
-                val inc = rand() * 10
-                return PlayState(n, inc)
-            }
-            else -> {
-                throw Exception("Unhandled case ${m}")
-            }
-        }
+class Group(o : dynamic) {
+    val o = o
+    fun add(m : Mesh) { o.add(m.o) }
+    fun remove(m : Mesh) { o.remove(m.o) }
+}
+
+fun newGroup() : Group {
+    return Group(js("new THREE.Group()"))
+}
+
+class Floor(number : Int) {
+    val number = number
+    val backWallGeom = newBoxGeometry(100.0, 2.0, 0.2)
+    val backWallMaterial = newMeshLambertMaterial(0xf2e9c4)
+    val backWall = newMesh(backWallGeom, backWallMaterial)
+    val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
+    val floorMaterial = newMeshLambertMaterial(0x006600)
+    val floor = newMesh(floorGeom, floorMaterial)
+    val group = newGroup()
+    init {
+        backWall.o.position.y = 1.0
+        backWall.o.position.z = 1.0
+        floor.o.position.z = 1.0
+        group.add(backWall)
+        group.add(floor)
+        group.o.position.y = number * 2.0
     }
+    fun addToScene(scene : Scene) {
+        scene.add(group)
+    }
+    fun removeFromScene(scene : Scene) {
+        scene.remove(group)
+    }
+}
+
+fun sigmoid(x : Double) : Double {
+    return 1.0 / (1.0 + Math.exp(-x))
 }
 
 val codemap : Map<Int, Key> = hashMapOf(
         Pair<Int,Key>(Key.Space.v, Key.Space)
 )
 
-enum class GameState {
-    PrePlay, Play, LevelOut, LevelIn, Dying
-}
-
-class GameContainer(state : PlayState) {
-    val stateStack : Array<GameState> = Array<GameState>(20, { n -> GameState.PrePlay })
-    val curState : Int = 0
-    var state : PlayState = state
-    val geom = newBoxGeometry(5.0,5.0,5.0)
+class GameContainer() {
+    val geom = newBoxGeometry(0.5,0.5,0.5)
     val material = newMeshLambertMaterial(0xff0000)
     val mesh = newMesh(geom,material)
 
+    val light = newLight(0xeeeeee)
+
+    val aspect =
+            kotlin.browser.window.innerWidth / kotlin.browser.window.innerHeight
+    val camera = newPerspectiveCamera(35.0, aspect, 0.1, 10000.0)
+
+    val floors = (1..100).map({n -> Floor(n)}).toList()
+
+    var cameraY = 3.0
+    var targetCameraY = 3.0
+    var curTime = 0.0
+    var lastMove = 0.0
+    var targetFloor = 0
+
+    fun addToScene(scene : Scene) {
+        scene.add(mesh)
+        scene.add(light)
+        floors.forEach { f -> f.addToScene(scene) }
+    }
+
+    fun removeFromScene(scene : Scene) {
+        scene.remove(mesh)
+        floors.forEach { f -> f.removeFromScene(scene) }
+    }
+
     fun update(m : GameUpdateMessage) {
-        state = state.update(m)
-        mesh.rotation.x = state.n
+        if (m.tag == GameUpdateMessageTag.NewFrame) {
+            curTime += m.time
+            cameraY = (cameraY + (targetCameraY * m.time)) / (1.0 + m.time)
+            camera.o.position.set( 0, cameraY, 10.0 )
+            camera.o.lookAt( 0, 1.0, 0.0 )
+            light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
+        } else if (m.tag == GameUpdateMessageTag.KeyDown) {
+            targetFloor = (targetFloor + 1) % 100
+            targetCameraY = (targetFloor * 2.0) + 1.0
+        }
     }
 }
 
@@ -119,12 +195,12 @@ fun doError(container : org.w3c.dom.Element, content : org.w3c.dom.Element, t : 
 
 var lastTime = 0.0
 
-fun render(renderer : dynamic, scene : dynamic, camera : dynamic, game : GameContainer) {
+fun render(renderer : dynamic, scene : Scene, game : GameContainer) {
     var curTime = getCurTime()
     game.update(GameUpdateMessage(curTime - lastTime))
     lastTime = getCurTime()
-    renderer.render( scene, camera );
-    kotlin.browser.window.requestAnimationFrame { render(renderer,scene,camera,game) }
+    renderer.render( scene.o, game.camera.o )
+    kotlin.browser.window.requestAnimationFrame { render(renderer,scene,game) }
 }
 
 fun main(args: Array<String>) {
@@ -142,24 +218,15 @@ fun main(args: Array<String>) {
         if (renderer == null) {
             throw Exception("No renderer")
         }
-        var aspect =
-                kotlin.browser.window.innerWidth / kotlin.browser.window.innerHeight;
-        val camera = newPerspectiveCamera(35.0, aspect, 0.1, 10000.0)
         renderer.setSize( kotlin.browser.window.innerWidth, kotlin.browser.window.innerHeight );
         renderer.domElement.setAttribute("class", "gamecontent")
         gamerender?.appendChild( renderer.domElement );
 
         val scene = newScene()
-        camera.position.set( -15, 10, 15 );
-        camera.lookAt( scene.position );
-
-        var light = newLight(0xffff00)
-        light.position.set( 10, 0, 10 );
-        scene.add( light );
 
         renderer.setClearColor( 0xdddddd, 1);
 
-        var game = GameContainer(PlayState(0.0, 0.0))
+        var game = GameContainer()
 
         kotlin.browser.window.addEventListener("keydown", { evt : dynamic ->
             val key = codemap[evt.keyCode]
@@ -168,11 +235,16 @@ fun main(args: Array<String>) {
             }
         })
 
-        scene.add( game.mesh );
+        game.addToScene(scene)
 
         lastTime = getCurTime()
 
-        render(renderer, scene, camera, game)
+        val onResize = { evt : dynamic ->
+            renderer.setSize(kotlin.browser.window.innerWidth, kotlin.browser.window.innerHeight)
+        }
+        kotlin.browser.window.addEventListener("resize", onResize)
+
+        render(renderer, scene, game)
     } catch (e : Exception) {
         if (error != null && errorContent != null) {
             doError(error, errorContent, "${e}");
