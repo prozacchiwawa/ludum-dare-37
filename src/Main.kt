@@ -38,16 +38,24 @@ fun newPerspectiveCamera(fl : Double, aspect : Double, minZ : Double, maxZ : Dou
     return Camera(js("(function(fl,a,nz,xz) { return new THREE.PerspectiveCamera(fl, a, nz, xz) })")(fl, aspect, minZ, maxZ))
 }
 
-fun newJSONLoader() : dynamic {
+fun newObjectLoader() : dynamic {
     return js("new THREE.ObjectLoader()")
 }
 
-fun isSkinnedMesh(child : dynamic) : Boolean {
-    return js("(function(child) { return child instanceof THREE.SkinnedMesh })")(child)
+fun newJSONLoader() : dynamic {
+    return js("new THREE.JSONLoader()")
 }
 
-fun newAnimation(child : dynamic,animation : dynamic) : dynamic {
-    return js("(function(child,animation) { return new THREE.Animation(child,animation) })")(child,animation)
+fun newAnimationMixer(mesh : Mesh) : dynamic {
+    return js("(function (mesh) { return new THREE.AnimationMixer(mesh) })")(mesh.o)
+}
+
+fun newSkinnedMesh(geometry : dynamic, material : dynamic) : dynamic {
+    return js("(function (geometry,material) { return new THREE.SkinnedMesh(geometry,material) })")(geometry, material)
+}
+
+fun newMeshFaceMaterial(materials : dynamic) : dynamic {
+    return js("(function (materials) { return new THREE.MeshFaceMaterial(materials) })")(materials)
 }
 
 class Scene(o : dynamic) {
@@ -126,6 +134,8 @@ fun newGroup() : Group {
 }
 
 val floorHeight = 3.0
+
+val clock = js("new THREE.Clock()")
 
 interface InScene {
     fun addToScene(scene : Scene)
@@ -221,19 +231,30 @@ class Hero : InScene {
     val movetime = 0.1
     var movespeed = 2.0
 
-    var collada : dynamic = null
+    var stored : dynamic = null
+    var mixer : dynamic = null
+
+    var hello : dynamic = null
 
     init {
         val loader = newJSONLoader()
-        console.log("loader",loader)
-        loader.load("SkinnerRig1x1.json", { collada ->
-            console.log("loaded", collada)
-            this.collada = collada
+        loader.load("SkinnerWalk2x1.json", { geometry, materials ->
+            console.log(materials)
+            (0..materials.length - 1).forEach({ i ->
+                val material = materials[i]
+                // material.skinning = true // Allows animation, bug
+            })
+            console.log("loaded", geometry)
+            val smesh = Mesh(newSkinnedMesh(geometry, newMeshFaceMaterial(materials)))
+            this.stored = smesh
             val holderGroup = newGroup()
-            holderGroup.o.add(collada)
             holderGroup.o.position.y = 0.0
             holderGroup.o.position.z = 1.0
             holderGroup.o.rotation.y = Math.PI / 2.0
+            mixer = newAnimationMixer(smesh)
+            hello = mixer.clipAction(geometry.animations[0])
+            hello.enabled = true
+            holderGroup.add(smesh)
             group.add(holderGroup)
         })
         group.o.position.y = floorHeight
@@ -258,7 +279,16 @@ class Hero : InScene {
         moveexpire = movetime
     }
 
+    var playing = false
+
     fun update(t : Double) {
+        if (mixer != null) {
+            mixer.update(t)
+        }
+        if (!playing && hello != null) {
+            playing = true
+            hello.play()
+        }
         if (movedir != 0.0) {
             group.o.position.x += movedir * t * movespeed
         }
