@@ -234,6 +234,18 @@ class Elevator(min : Int, max : Int) : InScene {
         scene.remove(group)
     }
 
+    fun callButton(newFloor : Int) {
+        if (floor > newFloor) {
+            direction = false
+        } else if (floor < newFloor) {
+            direction = true
+        } else {
+            if (open > 0.0) {
+                open = openTime
+            }
+        }
+    }
+
     fun update(time : Double) {
         val targetY = floor * floorHeight
         if (targetY != group.o.position.y) {
@@ -277,14 +289,21 @@ class GameContainer() {
 
     val floors = (1..100).map({n -> Floor(n)}).toList()
 
-    var cameraY = 3.0
+    var targetCameraX = 0.0
     var targetCameraY = 3.0
+
     var curTime = 0.0
     var lastMove = 0.0
     var targetFloor = 0
 
     val hero = Hero()
-    val elevator = Elevator(1, 3)
+    val elevator = Elevator(1, 6)
+
+    init {
+        camera.o.position.x = 0
+        camera.o.position.z = 15.0
+        camera.o.lookAt(0, 1.0, 0.0)
+    }
 
     fun addToScene(scene : Scene) {
         scene.add(light)
@@ -300,18 +319,25 @@ class GameContainer() {
         floors.forEach { f -> f.removeFromScene(scene) }
     }
 
+    fun heroCurrentFloor() : Int {
+        return Math.round((hero.group.o.position.y - 1.0) / 2.0)
+    }
+
     fun update(m : GameUpdateMessage) {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
             elevator.update(m.time)
-            cameraY = (cameraY + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
-            camera.o.position.set( 0, cameraY, 15.0 )
+            camera.o.position.x = (camera.o.position.x + (targetCameraX * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
+            camera.o.position.y = (camera.o.position.y + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
             camera.o.lookAt( 0, 1.0, 0.0 )
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
-            targetFloor = (targetFloor + 1) % 100
-            targetCameraY = (targetFloor * floorHeight) + 1.0
+            if (m.key == Key.Space) {
+                elevator.callButton(heroCurrentFloor())
+            }
         }
+        targetCameraX = hero.group.o.position.x
+        targetCameraY = hero.group.o.position.y
     }
 }
 
