@@ -135,6 +135,8 @@ class Floor(number : Int) : InScene {
     var doors : MutableList<Group> = mutableListOf()
     val group = newGroup()
 
+    val doorOpenRotation = -0.2
+
     init {
         val backWallLeft = newMesh(backWallGeom, backWallMaterial)
         backWallLeft.o.position.x = -10.5
@@ -167,6 +169,27 @@ class Floor(number : Int) : InScene {
         }).toMutableList()
         doors.forEach({ d -> group.add(d) })
     }
+
+    fun nearDoor(x : Double) : Int? {
+        val res = doors.mapIndexedNotNull({ i, doorGroup ->
+            val res = doorGroup.o.position.x + 1.1 < x && doorGroup.o.position.x + 1.6 > x
+            console.log("door",doorGroup.o.position.x,"with",x,"res",res)
+            return if (res) { i } else { null }
+        }).firstOrNull()
+        return res
+    }
+
+    fun toggleDoor(d : Int) {
+        val door = doors.get(d)
+        if (door != null) {
+            if (door.o.rotation.y < 0) {
+                door.o.rotation.y = 0
+            } else {
+                door.o.rotation.y = doorOpenRotation
+            }
+        }
+    }
+
     override fun addToScene(scene : Scene) {
         scene.add(group)
     }
@@ -199,7 +222,7 @@ class Hero : InScene {
     }
 
     fun onFloor() : Int {
-        return Math.round(group.o.position.y / floorHeight)
+        return Math.round(group.o.position.y / floorHeight) - 1
     }
 
     fun beginMove(x : Double) {
@@ -286,7 +309,7 @@ class Elevator(min : Int, max : Int) : InScene {
     }
 
     fun onFloor() : Int {
-        return Math.round(group.o.position.y / floorHeight)
+        return Math.round(group.o.position.y / floorHeight) - 1
     }
 
     fun isOpen() : Boolean {
@@ -408,6 +431,18 @@ class GameContainer() {
                 }
                 Key.Left -> { if (!hero.inElevator()) { hero.beginMove(-1.0) } }
                 Key.Right -> { if (!hero.inElevator()) { hero.beginMove(1.0) } }
+                Key.Space -> {
+                    val floor = floors.get(hero.onFloor())
+                    console.log("try open door on",floor)
+                    if (floor != null) {
+                        val door = floor.nearDoor(hero.group.o.position.x)
+                        console.log("try open door",door,"on",floor)
+                        if (door != null) {
+                            console.log("toggle",door,"on",floor)
+                            floor.toggleDoor(door)
+                        }
+                    }
+                }
                 else -> { }
             }
         } else if (m.tag == GameUpdateMessageTag.KeyUp) {
