@@ -84,7 +84,7 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
     var nextId = 0
 
     fun randomFloorAndDoor() : FloorAndDoor {
-        return FloorAndDoor(Math.round(rand() * buildingMap.floors) + 1, Math.round(rand() * numDoors))
+        return FloorAndDoor(Math.floor(rand() * buildingMap.floors), Math.floor(rand() * numDoors))
     }
 
     init {
