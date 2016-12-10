@@ -113,9 +113,11 @@ fun newGroup() : Group {
     return Group(js("new THREE.Group()"))
 }
 
+val floorHeight = 2.0
+
 class Floor(number : Int) {
     val number = number
-    val backWallGeom = newBoxGeometry(100.0, 2.0, 0.2)
+    val backWallGeom = newBoxGeometry(100.0, floorHeight, 0.2)
     val backWallMaterial = newMeshLambertMaterial(0xf2e9c4)
     val backWall = newMesh(backWallGeom, backWallMaterial)
     val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
@@ -134,7 +136,7 @@ class Floor(number : Int) {
         floor.o.position.z = 1.0
         group.add(backWall)
         group.add(floor)
-        group.o.position.y = number * 2.0
+        group.o.position.y = number * floorHeight
         doors = (0..10).map({ n ->
             val d = newGroup()
             val plate = newMesh(doorGeom, doorMaterial)
@@ -206,7 +208,7 @@ class GameContainer() {
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
             targetFloor = (targetFloor + 1) % 100
-            targetCameraY = (targetFloor * 2.0) + 1.0
+            targetCameraY = (targetFloor * floorHeight) + 1.0
         }
     }
 }
