@@ -38,6 +38,10 @@ fun newPerspectiveCamera(fl : Double, aspect : Double, minZ : Double, maxZ : Dou
     return Camera(js("(function(fl,a,nz,xz) { return new THREE.PerspectiveCamera(fl, a, nz, xz) })")(fl, aspect, minZ, maxZ))
 }
 
+fun newColladaLoader() : dynamic {
+    return js("new THREE.ColladaLoader()")
+}
+
 class Scene(o : dynamic) {
     val o = o
     fun add(m : Mesh) { o.add(m.o) }
@@ -113,7 +117,7 @@ fun newGroup() : Group {
     return Group(js("new THREE.Group()"))
 }
 
-val floorHeight = 2.0
+val floorHeight = 3.0
 
 interface InScene {
     fun addToScene(scene : Scene)
@@ -127,7 +131,7 @@ class Floor(number : Int) : InScene {
     val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
     val floorMaterial = newMeshLambertMaterial(0x006600)
     val floor = newMesh(floorGeom, floorMaterial)
-    val doorGeom = newBoxGeometry(1.0, 1.5, 0.15)
+    val doorGeom = newBoxGeometry(1.0, 2.2, 0.15)
     val doorMaterial = newMeshLambertMaterial(0x000055)
     val doorHandleGeom = newBoxGeometry(0.1, 0.1, 0.1)
     val doorHandleMaterial = newMeshLambertMaterial(0xffffff)
@@ -155,11 +159,11 @@ class Floor(number : Int) : InScene {
             val d = newGroup()
             val plate = newMesh(doorGeom, doorMaterial)
             plate.o.position.x = 1.0
-            plate.o.position.y = 0.75
+            plate.o.position.y = 1.1
             plate.o.position.z = 0.1
             val handle = newMesh(doorHandleGeom, doorHandleMaterial)
             handle.o.position.x = 1.4
-            handle.o.position.y = 0.75
+            handle.o.position.y = 1.1
             handle.o.position.z = 0.15
             d.add(plate)
             d.add(handle)
@@ -209,11 +213,18 @@ class Hero : InScene {
     val movetime = 0.1
     var movespeed = 2.0
 
+    var collada : dynamic = null
+
     init {
-        mesh.o.position.y = 0.65
-        group.o.position.y = 2.0
-        group.o.position.z = 1.0
-        group.add(mesh)
+        val loader = newColladaLoader()
+        loader.options.convertUpAxis = true
+        loader.load("KolchakRig.dae", { collada ->
+            this.collada = collada
+            val holderGroup = newGroup()
+            holderGroup.o.add(collada.scene)
+            holderGroup.o.position.y = floorHeight + 1.0
+            group.add(holderGroup)
+        })
     }
 
     fun inElevator() : Boolean {
