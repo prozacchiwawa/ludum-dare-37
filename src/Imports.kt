@@ -12,12 +12,20 @@ fun newBoxGeometry(x : Double, y : Double, z : Double) : Geometry {
     return Geometry(js("(function (x,y,z) { return new THREE.BoxGeometry(x,y,z); })")(x,y,z))
 }
 
+fun newPlaneGeometry(x : Double, y : Double, facetsX : Int, facetsY : Int) : Geometry {
+    return Geometry(js("(function (x,y,facetsX,facetsY) { return new THREE.PlaneGeometry(x,y,facetsX,facetsY) })")(x,y,facetsX,facetsY))
+}
+
 class Material(o : dynamic) {
     val o = o
 }
 
 fun newMeshLambertMaterial(color : Int) : Material {
     return Material(js("(function (c) { return new THREE.MeshLambertMaterial({color: c}); })")(color))
+}
+
+fun newMeshBasicMaterial(texture : dynamic) : Material {
+    return Material(js("(function (texture) { return new THREE.MeshBasicMaterial({ map: texture, side:THREE.DoubleSide, transparent: true }) })")(texture))
 }
 
 class Mesh(o : dynamic) {

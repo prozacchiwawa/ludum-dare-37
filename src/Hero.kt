@@ -16,31 +16,23 @@ class Hero : InScene {
     var stored : dynamic = null
     var mixer : dynamic = null
 
-    var hello : dynamic = null
+    var texture : dynamic = null
+    var animator : TextureAnimator? = null
 
     init {
-        val loader = newJSONLoader()
-        loader.load("SkinnerWalk2x1.json", { geometry, materials ->
-            console.log(materials)
-            (0..materials.length - 1).forEach({ i ->
-                val material = materials[i]
-                // material.skinning = true // Allows animation, bug
-            })
-            console.log("loaded", geometry)
-            val smesh = Mesh(newSkinnedMesh(geometry, newMeshFaceMaterial(materials)))
+        loadTexture("KarlSheet.png", { texture ->
+            console.log("karl", texture)
+            this.texture = texture
+            val animator = TextureAnimator(texture, 16, 2, 32, 60.0)
+            this.animator = animator
+            animator.play(0,32)
+            console.log(texture)
+            val smesh = Sprite(texture, 1.0, 2.0)
             this.stored = smesh
-            val holderGroup = newGroup()
-            holderGroup.o.position.y = 0.0
-            mixer = newAnimationMixer(smesh)
-            hello = mixer.clipAction(geometry.animations[0])
-            hello.enabled = true
-            holderGroup.add(smesh)
-            group.add(holderGroup)
+            group.add(smesh.group)
             group.o.position.z = 2.0
-            group.o.rotation.y = Math.PI / 2.0
-            null
+            group.o.position.y = floorHeight + 1.0
         })
-        group.o.position.y = floorHeight
     }
 
     fun inElevator() : Boolean {
@@ -69,12 +61,9 @@ class Hero : InScene {
     var playing = false
 
     fun update(t : Double) {
+        animator?.update(t)
         if (mixer != null) {
             mixer.update(t)
-        }
-        if (!playing && hello != null) {
-            playing = true
-            hello.play()
         }
         if (movedir != 0.0) {
             group.o.position.x += movedir * t * movespeed
@@ -85,13 +74,6 @@ class Hero : InScene {
                 movedir = 0.0
                 moveexpire = -1.0
             }
-        }
-        if (inElevator() || movedir == 0.0) {
-            group.o.rotation.y = 0
-        } else if (movedir < 0) {
-            group.o.rotation.y = -Math.PI / 2.0
-        } else {
-            group.o.rotation.y = Math.PI / 2.0
         }
     }
 
