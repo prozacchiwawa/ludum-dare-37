@@ -96,6 +96,44 @@
         .gameui-wanted:before {
             content: "Wanted:"
         }
+
+        .game-over-div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-over-center {
+            display: flex;
+            color: white;
+        }
+
+        .death-div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .death-center {
+            display: flex;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -104,6 +142,12 @@
     <div id="gameui-header" class="gameui-header">
         <div id="gameui-badges" class="gameui-badges"></div>
         <div id="gameui-wanted" class="gameui-wanted"></div>
+    </div>
+    <div id="game-over-div" class="game-over-div" style="display: none">
+        <div id="game-over-center">Game Over</div>
+    </div>
+    <div id="death-div" class="death-div" style="display: none">
+        <div id="death-center">You've been caught!</div>
     </div>
 </div>
 </div>

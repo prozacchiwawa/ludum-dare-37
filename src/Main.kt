@@ -54,10 +54,67 @@ class FloorAndDoor(floor : Int, door : Int) {
     val door = door
 }
 
+class ModeChange(pop : Boolean, push : IGameMode?) {
+    val pop = pop
+    val push = push
+}
+
+interface IGameMode : InScene {
+    fun update(scene : Scene, m : GameUpdateMessage) : ModeChange
+}
+
+class DieMode(returnToMode : IGameMode) : InScene, IGameMode {
+    var shownTime = 0.0
+    val showTime = 5.0
+    val returnToMode = returnToMode
+    val deathDiv = kotlin.browser.document.getElementById("death-div")
+
+    override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
+        val god = deathDiv
+        shownTime += m.time
+        god?.setAttribute("style", "display: flex")
+        if (shownTime >= showTime) {
+            god?.setAttribute("style", "display: none")
+            return ModeChange(true, returnToMode)
+        }
+        return ModeChange(false, null)
+    }
+
+    override fun addToScene(scene : Scene) {
+    }
+
+    override fun removeFromScene(scene : Scene) {
+    }
+}
+
+class GameOverMode(returnToMode : IGameMode) : InScene, IGameMode {
+    var shownTime = 0.0
+    val showTime = 5.0
+    val returnToMode = returnToMode
+    val gameOverDiv = kotlin.browser.document.getElementById("game-over-div")
+
+    override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
+        val god = gameOverDiv
+        shownTime += m.time
+        god?.setAttribute("style", "display: flex")
+        if (shownTime >= showTime) {
+            god?.setAttribute("style", "display: none")
+            return ModeChange(true, returnToMode)
+        }
+        return ModeChange(false, null)
+    }
+
+    override fun addToScene(scene : Scene) {
+    }
+
+    override fun removeFromScene(scene : Scene) {
+    }
+}
+
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
  * if an NPC will spawn, it'll be near the user, slightly more likely in the direction of the one room.
  */
-class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
+class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, IGameMode {
     val light = newLight(0xeeeeee)
 
     val aspect =
@@ -70,11 +127,11 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
     var curTime = 0.0
 
     val hero = Hero()
-    val numFloors = 6
-    val elevator = Elevator(1, numFloors)
+    var numFloors = 6
+    var elevator = Elevator(1, numFloors)
 
-    val floors = (1..numFloors).map({n -> Floor(n)}).toList()
-    val buildingMap = StaticBuildMap(floors)
+    var floors = (1..numFloors).map({n -> Floor(n)}).toList()
+    var buildingMap = StaticBuildMap(floors)
 
     var oneroom = randomFloorAndDoor()
 
@@ -88,6 +145,21 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
     var wanted = 0.0
     var caught = 0.0
     var badges = 3
+
+    fun reset() {
+        numFloors = 6
+        elevator = Elevator(1, numFloors)
+        hero.group.o.posiiton.x = 0.0
+        hero.group.o.position.y = floorHeight
+        hero.group.o.position.z = 2.0
+        floors = (1..numFloors).map({n->Floor(n)}).toList()
+        buildingMap = StaticBuildMap(floors)
+        oneroom = randomFloorAndDoor()
+        npcs.clear()
+        wanted = 0.0
+        caught = 0.0
+        badges = 3
+    }
 
     fun randomFloorAndDoor() : FloorAndDoor {
         return FloorAndDoor(Math.floor(rand() * buildingMap.floors.size), Math.floor(rand() * numDoors))
@@ -105,14 +177,14 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         camera.o.lookAt(0, 1.0, 0.0)
     }
 
-    fun addToScene(scene : Scene) {
+    override fun addToScene(scene : Scene) {
         scene.add(light)
         hero.addToScene(scene)
         elevator.addToScene(scene)
         floors.forEach { f -> f.addToScene(scene) }
     }
 
-    fun removeFromScene(scene : Scene) {
+    override fun removeFromScene(scene : Scene) {
         scene.remove(light)
         hero.removeFromScene(scene)
         elevator.removeFromScene(scene)
@@ -138,18 +210,21 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         }
     }
 
-    fun loseLife() {
+    fun loseLife() : ModeChange {
         badges = Math.max(0, badges - 1)
         if (badges == 0) {
-            gameOver()
+            return gameOver()
+        } else {
+            return ModeChange(false, DieMode(this))
         }
     }
 
-    fun gameOver() {
-
+    fun gameOver() : ModeChange {
+        reset()
+        return ModeChange(false, GameOverMode(this))
     }
 
-    fun handleNPCs(scene : Scene, m : GameUpdateMessage) {
+    fun handleNPCs(scene : Scene, m : GameUpdateMessage) : ModeChange {
         if (curTime > nextSpawnTime && npcs.size < wantNPCs) {
             nextSpawnTime = curTime + timeBetweenSpawns
             val fd = randomFloorAndDoor()
@@ -181,14 +256,19 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         wanted = Math.max(0.0, Math.min(1.1, wanted + (m.time * (suspicious.toDouble() - 0.5) / 10.0)))
         caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.5) / 2.5))
         if (caught >= 1.0) {
-            loseLife()
+            return loseLife()
         }
         toDespawn.forEach { x -> npcs.remove(x) }
+        return ModeChange(false, null)
     }
 
     val stunDistance = 2.0
 
-    fun update(scene : Scene, m : GameUpdateMessage) {
+    fun enterDoor(floor : Int, door : Int) : ModeChange {
+        return ModeChange(false, Room())
+    }
+
+    override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
             hero.update(m.time)
@@ -200,7 +280,7 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
             camera.o.position.y = (camera.o.position.y + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
             camera.o.lookAt( 0, 1.0, 0.0 )
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
-            handleNPCs(scene, m)
+            return handleNPCs(scene, m)
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
             when (m.key) {
                 Key.C -> {
@@ -222,6 +302,15 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
                             elevator.onFloor() == hero.onFloor() &&
                             !hero.inElevator()) {
                         hero.getInElevator(elevator)
+                    } else {
+                        val floor = floors.get(hero.onFloor())
+                        console.log("try open door on",floor)
+                        if (floor != null) {
+                            val door = floor.nearDoor(hero.group.o.position.x)
+                            if (door != null && floor.doorOpen(door)) {
+                                return enterDoor(floor.number, door)
+                            }
+                        }
                     }
                 }
                 Key.Down -> {
@@ -255,6 +344,7 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         }
         targetCameraX = hero.group.o.position.x
         targetCameraY = hero.group.o.position.y + (floorHeight / 2.0)
+        return ModeChange(false, null)
     }
 }
 
@@ -265,14 +355,11 @@ fun doError(container : org.w3c.dom.Element, content : org.w3c.dom.Element, t : 
 
 var lastTime = 0.0
 
-fun render(renderer : dynamic, setBadges : (Int) -> Unit, setWantedStars : (Double,Double) -> Unit, scene : Scene, game : GameContainer) {
+fun render(doUpdate : (GameUpdateMessage) -> Unit) {
     var curTime = getCurTime()
-    game.update(scene, GameUpdateMessage(curTime - lastTime))
-    setBadges(game.badges)
-    setWantedStars(game.wanted, game.caught)
+    doUpdate(GameUpdateMessage(curTime - lastTime))
     lastTime = getCurTime()
-    renderer.render( scene.o, game.camera.o )
-    kotlin.browser.window.requestAnimationFrame { render(renderer,setBadges,setWantedStars,scene,game) }
+    kotlin.browser.window.requestAnimationFrame { render(doUpdate) }
 }
 
 fun main(args: Array<String>) {
@@ -336,12 +423,31 @@ fun main(args: Array<String>) {
 
         val runGame = {
             try {
-                var game = GameContainer(loadedResources)
+                val stateStack : MutableList<IGameMode> = mutableListOf()
+                val game = GameContainer(loadedResources)
+                stateStack.add(game)
+                val gameState = {
+                    stateStack[stateStack.size - 1]
+                }
+                val doUpdate = { msg : GameUpdateMessage ->
+                    val modechange = gameState().update(scene, msg)
+                    if (modechange.pop) {
+                        gameState().removeFromScene(scene)
+                        stateStack.removeAt(stateStack.size - 1)
+                        gameState().addToScene(scene)
+                    }
+                    val newMode = modechange.push
+                    if (newMode != null) {
+                        gameState().removeFromScene(scene)
+                        stateStack.add(newMode)
+                        gameState().addToScene(scene)
+                    }
+                }
 
                 kotlin.browser.window.addEventListener("keydown", { evt: dynamic ->
                     val key = codemap[evt.keyCode]
                     if (key != null) {
-                        game.update(scene, GameUpdateMessage(GameUpdateMessageTag.KeyDown, key))
+                        doUpdate(GameUpdateMessage(GameUpdateMessageTag.KeyDown, key))
                     } else {
                         console.log("keydown unknown", evt.keyCode)
                     }
@@ -349,13 +455,13 @@ fun main(args: Array<String>) {
                 kotlin.browser.window.addEventListener("keyup", { evt: dynamic ->
                     val key = codemap[evt.keyCode]
                     if (key != null) {
-                        game.update(scene, GameUpdateMessage(GameUpdateMessageTag.KeyUp, key))
+                        gameState().update(scene, GameUpdateMessage(GameUpdateMessageTag.KeyUp, key))
                     } else {
                         console.log("keyup unknown", evt.keyCode)
                     }
                 })
 
-                game.addToScene(scene)
+                gameState().addToScene(scene)
 
                 lastTime = getCurTime()
 
@@ -364,7 +470,12 @@ fun main(args: Array<String>) {
                 }
                 kotlin.browser.window.addEventListener("resize", onResize)
 
-                render(renderer, setBadges, setWantedStars, scene, game)
+                render({ msg : GameUpdateMessage ->
+                    setBadges(game.badges)
+                    setWantedStars(game.wanted, game.caught)
+                    renderer.render( scene.o, game.camera.o )
+                    doUpdate(msg)
+                })
             } catch (e : Exception) {
                 if (error != null && errorContent != null) {
                     doError(error, errorContent, "${e}");

@@ -76,6 +76,11 @@ class Floor(number : Int) : InScene {
         }
     }
 
+    fun doorOpen(d : Int) : Boolean {
+        val door = doors.get(d)
+        return door != null && door.o.rotation.y < 0
+    }
+
     override fun addToScene(scene : Scene) {
         scene.add(group)
     }
