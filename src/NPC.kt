@@ -127,7 +127,6 @@ class NPC(res : String) : InScene {
     var movespeed = 2.0
 
     var stored : dynamic = null
-    var mixer : dynamic = null
 
     val stunTime = 1.5
 
@@ -178,9 +177,6 @@ class NPC(res : String) : InScene {
 
     fun update(t : Double) {
         animator?.update(t)
-        if (mixer != null) {
-            mixer.update(t)
-        }
         if (movedir != 0.0) {
             group.o.position.x += movedir * t * movespeed
         }
@@ -231,8 +227,10 @@ class NPC(res : String) : InScene {
     val toBeClose = 6.0
 
     fun nearHero(h : Hero, nearness : Double = -1.0) : Boolean {
-        return h.onFloor() == onFloor() &&
-                actorDistance(this.group.o, h.group.o) < if (nearness > 0.0) { nearness } else { toBeClose }
+        val haveDist = actorDistance(this.group.o, h.group.o)
+        val nearDist = if (nearness > 0.0) { nearness } else { toBeClose }
+        return h.onFloor() == onFloor() && haveDist < nearDist
+
     }
 
     override fun addToScene(scene : Scene) {

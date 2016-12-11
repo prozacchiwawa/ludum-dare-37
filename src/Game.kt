@@ -10,6 +10,8 @@ var badges = 3
 
 val maxWanted = 1.7
 
+val clues : MutableSet<String> = mutableSetOf()
+
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
  * if an NPC will spawn, it'll be near the user, slightly more likely in the direction of the one room.
  */
@@ -105,9 +107,13 @@ class GameContainer() : InScene, IGameMode {
     fun loseLife(scene : Scene) : ModeChange {
         badges = Math.max(0, badges - 1)
         if (badges == 0) {
+            wanted = 0.0
+            caught = 0.0
             return gameOver(scene)
         } else {
             removeFromScene(scene)
+            wanted = 0.0
+            caught = 0.0
             npcs.clear()
             addToScene(scene)
             hero.group.o.position.x = 0.0
@@ -158,7 +164,7 @@ class GameContainer() : InScene, IGameMode {
                 toDespawn.add(npc.key)
             }
         }
-        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.5) / 3.0)))
+        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.05) / 4.0)))
         caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.2) / 2.5))
         if (caught >= 1.0) {
             return loseLife(scene)
@@ -188,7 +194,7 @@ class GameContainer() : InScene, IGameMode {
         if (oldRoom != null) {
             return ModeChange(false, oldRoom)
         } else {
-            val room = Room(floor, door, hero, camera)
+            val room = Room(floor, door, numFloors, hero, camera)
             genroom.put(Pair<Int,Int>(floor, door), room)
             return ModeChange(false, room)
         }

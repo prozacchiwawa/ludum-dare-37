@@ -134,6 +134,27 @@
             display: flex;
             color: white;
         }
+
+        .clue-div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 10vmin;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clue-center {
+            display: flex;
+            color: white;
+            min-height: 10vmin;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +169,9 @@
     </div>
     <div id="death-div" class="death-div" style="display: none">
         <div id="death-center">You've been caught!</div>
+    </div>
+    <div id="clue-div" class="clue-div" style="display: none">
+        <div id="clue-center" class="clue-center"></div>
     </div>
 </div>
 </div>

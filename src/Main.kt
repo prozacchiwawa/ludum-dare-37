@@ -76,7 +76,7 @@ class DieMode(returnToMode : IGameMode) : InScene, IGameMode {
         god?.setAttribute("style", "display: flex")
         if (shownTime >= showTime) {
             god?.setAttribute("style", "display: none")
-            return ModeChange(true, returnToMode)
+            return ModeChange(true, null)
         }
         return ModeChange(false, null)
     }
@@ -102,7 +102,35 @@ class GameOverMode(returnToMode : IGameMode) : InScene, IGameMode {
         god?.setAttribute("style", "display: flex")
         if (shownTime >= showTime) {
             god?.setAttribute("style", "display: none")
-            return ModeChange(true, returnToMode)
+            return ModeChange(true, null)
+        }
+        return ModeChange(false, null)
+    }
+
+    override fun addToScene(scene : Scene) {
+    }
+
+    override fun removeFromScene(scene : Scene) {
+    }
+
+    override fun getCamera() : Camera { return returnToMode.getCamera() }
+}
+
+class ClueMode(clue : String, returnToMode : IGameMode) : InScene, IGameMode {
+    val clue = clue
+    var shownTime = 0.0
+    val showTime = 5.0
+    val returnToMode = returnToMode
+    val deathDiv = kotlin.browser.document.getElementById("clue-div")
+
+    override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
+        val god = deathDiv
+        shownTime += m.time
+        god?.setAttribute("style", "display: flex")
+        god?.innerHTML = clue
+        if (shownTime >= showTime) {
+            god?.setAttribute("style", "display: none")
+            return ModeChange(true, null)
         }
         return ModeChange(false, null)
     }

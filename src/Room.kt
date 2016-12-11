@@ -4,13 +4,46 @@
 
 package org.sample
 
-class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGameMode {
+val maxProps = 3
+
+fun propRes() : String {
+    if (Math.floor(rand() * 2) > 0) {
+        return TYPEWRITER_RES
+    } else {
+        return FILECABINET_RES
+    }
+}
+
+fun clueText(floor : Int, room : Int, maxFloor : Int) : String {
+    val r = Math.round(Math.sqrt(rand() * 100))
+    val randfloor1Lowest = Math.max(maxFloor - 5, floor - 2)
+    val randfloor1Highest = Math.min(maxFloor, floor + 2)
+    val randfloor1 = Math.floor(rand() * (randfloor1Highest - randfloor1Lowest)) + randfloor1Lowest
+    val randroom1Lowest = Math.max(5, room - 2)
+    val randroom1Highest = Math.min(8, room + 1)
+    val randroom1 = Math.floor(rand() * (randroom1Highest - randroom1Lowest)) + randroom1Lowest
+    val wing = if (room >= 4) { "east" } else { "west" }
+    if (r > 9.5) {
+        return "I can't take it anymore ... You know who this is and what I want.  Meet me in room ${room+1} on ${floor+1} or we'll both regret it."
+    } else if (r > 8.5) {
+        return "Our associates have noticed your progress in the ${floor+1} lab.  We look forward to continued progress."
+    } else if (r > 0.6) {
+        return "... Construction noise near suite ${room+1} on ${randfloor1} continues to be a disrupting influence on our work..."
+    } else if (r > 0.3) {
+        return "Work Order: Issue(s) regarding dust and odors from the ventilation system in room ${randroom1} on floor ${randfloor1}"
+    } else {
+        return "Want to grab some coffee?  The power outlets are humming in a wierd way over in the ${wing} wing and we can't plug in anything"
+    }
+}
+
+class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera) : InScene, IGameMode {
     val light = newLight(0xffeeaa)
     val camera = camera
     val hero = hero
 
     val floor = floor
     val door = door
+    val maxFloor = maxFloor
 
     var targetCameraX = 0.0
     var targetCameraY = 0.0
@@ -25,6 +58,7 @@ class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGa
     val lastCameraX = camera.o.position.x
 
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
+    val props : MutableList<Prop> = mutableListOf()
 
     val backWallGeom = newBoxGeometry(20.0, floorHeight, 0.2)
     val backWallMaterial = newMeshLambertMaterial(0xc9c0bb)
@@ -69,6 +103,19 @@ class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGa
         light.o.position.x = 0
         light.o.position.y = 1.0 + floor * floorHeight
         light.o.position.z = -100.0
+
+        val numProps = Math.round(rand() * maxProps)
+        (0..numProps-1).forEach { n ->
+            val res = propRes()
+            val prop = Prop(res, clueText(floor, door, maxFloor), if (res == TYPEWRITER_RES) { 2.0 } else { 1.0 })
+            prop.group.o.position.x = (rand() * 15.0) - 7.5
+            prop.group.o.position.y = floor * floorHeight
+            prop.group.o.position.z = 1.0
+            props.add(prop)
+        }
+        if (rand() < 0.025) {
+            props.add(Prop(KEYCARD_RES, "*", 1.0))
+        }
     }
 
     fun nearDoor(x : Double) : Int? {
@@ -98,14 +145,16 @@ class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGa
     override fun addToScene(scene : Scene) {
         scene.add(light)
         scene.add(group)
-        scene.add(hero.group)
+        hero.addToScene(scene)
+        props.forEach { p -> p.addToScene(scene) }
         hero.group.o.position.x = 1.0
         camera.o.position.x = 1.0
     }
     override fun removeFromScene(scene : Scene) {
         scene.remove(light)
         scene.remove(group)
-        scene.remove(hero.group)
+        hero.removeFromScene(scene)
+        props.forEach { p -> p.removeFromScene(scene) }
         hero.group.o.position.x = lastHeroX
         hero.group.o.position.y = lastHeroY
         hero.group.o.position.z = lastHeroZ
@@ -164,6 +213,18 @@ class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGa
                         if (door != null) {
                             console.log("toggle",door,"on",floor)
                             floor.toggleDoor(door)
+                        }
+                    }
+                    val takeObject = props.filter { e -> e.nearHero(hero) }.firstOrNull()
+                    if (takeObject != null) {
+                        if (takeObject.clue == "*") {
+                            props.remove(takeObject)
+                            takeObject.removeFromScene(scene)
+                            badges++
+                        } else {
+                            takeObject.taken()
+                            clues.add(takeObject.clue)
+                            return ModeChange(false, ClueMode(takeObject.clue, this))
                         }
                     }
                 }

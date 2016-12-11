@@ -14,7 +14,6 @@ class Hero : InScene {
     var movespeed = 2.0
 
     var stored : dynamic = null
-    var mixer : dynamic = null
 
     var texture : dynamic = null
     var animator : TextureAnimator? = null
@@ -61,9 +60,6 @@ class Hero : InScene {
 
     fun update(t : Double) {
         animator?.update(t)
-        if (mixer != null) {
-            mixer.update(t)
-        }
         if (movedir != 0.0) {
             group.o.position.x += movedir * t * movespeed
         }
