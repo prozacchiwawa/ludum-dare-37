@@ -8,7 +8,8 @@ copy: out/production/oneroom/index.html \
 	out/production/oneroom/ItemSprites01.png \
 	out/production/oneroom/typewriter.png \
 	out/production/oneroom/filecabinet.png \
-	out/production/oneroom/keycard.png
+	out/production/oneroom/keycard.png \
+	out/production/oneroom/CopCar0001.png
 
 out/production/oneroom/index.html: index.html
 	cp index.html out/production/oneroom
@@ -29,6 +30,9 @@ out/production/oneroom/filecabinet.png: assets/filecabinet.png
 	cp $< $@
 
 out/production/oneroom/keycard.png: assets/keycard.png
+	cp $< $@
+
+out/production/oneroom/CopCar0001.png: assets/CopCar0001.png
 	cp $< $@
 
 out/production/oneroom/three.min.js: three.js-master/build/three.min.js
