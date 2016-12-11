@@ -61,6 +61,7 @@ class ModeChange(pop : Boolean, push : IGameMode?) {
 
 interface IGameMode : InScene {
     fun update(scene : Scene, m : GameUpdateMessage) : ModeChange
+    fun getCamera() : Camera
 }
 
 class DieMode(returnToMode : IGameMode) : InScene, IGameMode {
@@ -85,6 +86,8 @@ class DieMode(returnToMode : IGameMode) : InScene, IGameMode {
 
     override fun removeFromScene(scene : Scene) {
     }
+
+    override fun getCamera() : Camera { return returnToMode.getCamera() }
 }
 
 class GameOverMode(returnToMode : IGameMode) : InScene, IGameMode {
@@ -109,6 +112,8 @@ class GameOverMode(returnToMode : IGameMode) : InScene, IGameMode {
 
     override fun removeFromScene(scene : Scene) {
     }
+
+    override fun getCamera() : Camera { return returnToMode.getCamera() }
 }
 
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
@@ -272,6 +277,8 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, 
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
             hero.update(m.time)
+            targetCameraX = hero.group.o.position.x
+            targetCameraY = hero.group.o.position.y + (floorHeight / 2.0)
             elevator.update(m.time)
             if (hero.inElevator()) {
                 hero.group.o.position.y = elevator.group.o.position.y
@@ -342,10 +349,10 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, 
                 else -> { }
             }
         }
-        targetCameraX = hero.group.o.position.x
-        targetCameraY = hero.group.o.position.y + (floorHeight / 2.0)
         return ModeChange(false, null)
     }
+
+    override fun getCamera() : Camera { return camera }
 }
 
 fun doError(container : org.w3c.dom.Element, content : org.w3c.dom.Element, t : String) {
@@ -473,7 +480,7 @@ fun main(args: Array<String>) {
                 render({ msg : GameUpdateMessage ->
                     setBadges(game.badges)
                     setWantedStars(game.wanted, game.caught)
-                    renderer.render( scene.o, game.camera.o )
+                    renderer.render( scene.o, game.getCamera().o )
                     doUpdate(msg)
                 })
             } catch (e : Exception) {
