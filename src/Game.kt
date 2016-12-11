@@ -35,6 +35,7 @@ class GameContainer() : InScene, IGameMode {
     var wantNPCs = 10
     var nextSpawnTime = 0.0
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
+    val genroom : MutableMap<Pair<Int,Int>, Room> = mutableMapOf()
 
     var nextId = 0
 
@@ -104,6 +105,17 @@ class GameContainer() : InScene, IGameMode {
         if (badges == 0) {
             return gameOver(scene)
         } else {
+            removeFromScene(scene)
+            npcs.clear()
+            addToScene(scene)
+            hero.group.o.position.x = 0.0
+            hero.group.o.position.y = floorHeight
+            hero.group.o.position.z = -2.0
+            camera.o.position.x = 0.0
+            camera.o.position.y = floorHeight + 1.0
+            camera.o.position.z = 15.0
+            targetCameraX = 0.0
+            targetCameraY = floorHeight + 1.0
             return ModeChange(false, DieMode(this))
         }
     }
@@ -144,11 +156,21 @@ class GameContainer() : InScene, IGameMode {
                 toDespawn.add(npc.key)
             }
         }
-        wanted = Math.max(0.0, Math.min(1.1, wanted + (m.time * (suspicious.toDouble() - 0.5) / 10.0)))
+        wanted = Math.max(0.0, Math.min(1.1, wanted + (m.time * (suspicious.toDouble() - 0.5) / 15.0)))
         caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.5) / 2.5))
         if (caught >= 1.0) {
             return loseLife(scene)
         }
+        val stopPursuit = npcs.filter { e -> e.value.pursuer && actorDistance(hero.group.o, e.value.n.group.o) > 10.0 / (1.0 - Math.min(0.99, wanted)) }
+        val startPursuit = npcs.filter { e -> e.value.pursuer && actorDistance(hero.group.o, e.value.n.group.o) < 5.0 * wanted }
+
+        stopPursuit.forEach { e ->
+            npcs.put(e.key, SpawnedNPC(e.value.id, e.value.n, e.value.pursuer, RandomNPCBehavior(randomFloorAndDoor(), 3.0)))
+        }
+        startPursuit.forEach { e ->
+            npcs.put(e.key, SpawnedNPC(e.value.id, e.value.n, e.value.pursuer, PursueHeroNPCBehavior()))
+        }
+
         toDespawn.forEach { x -> npcs.remove(x) }
         return ModeChange(false, null)
     }
@@ -156,7 +178,14 @@ class GameContainer() : InScene, IGameMode {
     val stunDistance = 2.0
 
     fun enterDoor(floor : Int, door : Int) : ModeChange {
-        return ModeChange(false, Room(floor, door, hero, camera))
+        val oldRoom = genroom.get(Pair<Int,Int>(floor, door))
+        if (oldRoom != null) {
+            return ModeChange(false, oldRoom)
+        } else {
+            val room = Room(floor, door, hero, camera)
+            genroom.put(Pair<Int,Int>(floor, door), room)
+            return ModeChange(false, room)
+        }
     }
 
     override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {

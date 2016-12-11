@@ -27,7 +27,7 @@ class Room(floor : Int, door : Int, hero : Hero, camera : Camera) : InScene, IGa
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
 
     val backWallGeom = newBoxGeometry(20.0, floorHeight, 0.2)
-    val backWallMaterial = newMeshLambertMaterial(0x4f3e24)
+    val backWallMaterial = newMeshLambertMaterial(0xc9c0bb)
     val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
     val floorMaterial = newMeshLambertMaterial(0x006600)
     val floorMesh = newMesh(floorGeom, floorMaterial)
