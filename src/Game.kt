@@ -27,7 +27,7 @@ class GameContainer() : InScene, IGameMode {
 
     var curTime = 0.0
 
-    val hero = Hero()
+    var hero = Hero()
     var numFloors = 6
     var elevator = Elevator(1, numFloors)
 
@@ -44,16 +44,13 @@ class GameContainer() : InScene, IGameMode {
     var nextId = 0
 
     fun reset(scene : Scene) {
-        elevator.reset()
         numFloors = 6
+        removeFromScene(scene)
         elevator = Elevator(1, numFloors)
-        hero.group.o.posiiton.x = 0.0
-        hero.group.o.position.y = floorHeight
-        hero.group.o.position.z = 2.0
+        hero = Hero()
         floors = (1..numFloors).map({n->Floor(n)}).toList()
         buildingMap = StaticBuildMap(floors)
         oneroom = randomFloorAndDoor()
-        removeFromScene(scene)
         npcs.clear()
         wanted = 0.0
         caught = 0.0
