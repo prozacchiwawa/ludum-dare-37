@@ -36,7 +36,7 @@ class GameContainer() : InScene, IGameMode {
 
     var oneroom = randomFloorAndDoor()
 
-    var wantNPCs = 10
+    var wantNPCs = 7
     var nextSpawnTime = 0.0
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
     val genroom : MutableMap<Pair<Int,Int>, Room> = mutableMapOf()

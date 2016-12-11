@@ -115,12 +115,13 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
             prop.group.o.position.z = 1.0
             props.add(prop)
         }
-        val numNPCs = Math.round(rand() * 5)
+        val numNPCs = Math.round(rand() * 5.0)
         (0..numNPCs-1).forEach { n ->
             val npc = SpawnedNPC(id++, NPC(SKINNER_RES), false, StaticNPCBehavior())
-            npc.n.group.o.position.x = (rand() * 15) - 7.5
+            npc.n.group.o.position.x = (rand() * 15.0) - 7.5
             npc.n.group.o.position.y = floor * floorHeight
             npc.n.group.o.position.z = 1.2
+            console.log(npc.n.group.o.position)
             npcs.put(npc.id, npc)
         }
         if (rand() < 0.025) {
@@ -157,7 +158,7 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
         scene.add(group)
         hero.addToScene(scene)
         props.forEach { p -> p.addToScene(scene) }
-        npcs.forEach { n -> n.value.n.addToScene(scene) }
+        npcs.forEach { n -> console.log("scene", n.key); n.value.n.addToScene(scene) }
         hero.group.o.position.x = 1.0
         camera.o.position.x = 1.0
     }
@@ -175,6 +176,7 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
 
     fun handleNPCs(scene : Scene, m : GameUpdateMessage) : ModeChange {
         wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (npcs.size.toDouble() - 0.10) / 10.0)))
+        npcs.forEach { n -> n.value.n.update(m.time) }
         return ModeChange(false, null)
     }
 
