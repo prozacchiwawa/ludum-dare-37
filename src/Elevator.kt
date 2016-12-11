@@ -13,6 +13,8 @@ class Elevator(min : Int, max : Int) : InScene {
     val espeed = 1.0
     val openTime = 2.0
 
+    var occupied : ((o : dynamic) -> Unit)? = null
+
     val elevatorBackGeom = newBoxGeometry(1.0, 2.0, 0.1)
     val elevatorBackMat = newMeshLambertMaterial(0x3f4f3e)
     val elevatorBack = newMesh(elevatorBackGeom, elevatorBackMat)
@@ -66,6 +68,18 @@ class Elevator(min : Int, max : Int) : InScene {
         return open > 0.0
     }
 
+    fun occupy(f : (o : dynamic) -> Unit) {
+        val occ = occupied
+        if (occ == null) {
+            occupied = f
+            f(group.o)
+        }
+    }
+
+    fun vacate() {
+        occupied = null
+    }
+
     fun update(time : Double) {
         val targetY = floor * floorHeight
         if (targetY != group.o.position.y) {
@@ -88,6 +102,10 @@ class Elevator(min : Int, max : Int) : InScene {
                     if (floor == min) { direction = true }
                 }
             }
+        }
+        val occ = occupied
+        if (occ != null) {
+            occ(group.o)
         }
     }
 }

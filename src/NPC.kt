@@ -25,7 +25,7 @@ class PursueHeroNPCBehavior : NPCBehavior {
                     n.endMove()
                 }
                 if (e.isOpen()) {
-                    n.getInElevator()
+                    n.getInElevator(e)
                     return NPCState(n.nearHero(h), true, false)
                 }
             } else {
@@ -144,9 +144,20 @@ class NPC(res : ResBundle) : InScene {
         }
     }
 
-    fun getInElevator() {
+    fun getInElevator(e : Elevator) {
+        e.occupy(
+                { o ->
+                    group.o.position.x = o.position.x
+                    group.o.position.y = o.position.y + 1.0
+                    group.o.position.z = o.position.z
+                }
+        )
+    }
+
+    fun leaveElevator(e : Elevator) {
+        e.vacate()
         group.o.position.x = 0.0
-        group.o.position.z = -1.5
+        group.o.position.z = 0.0
     }
 
     val toBeClose = 6.0

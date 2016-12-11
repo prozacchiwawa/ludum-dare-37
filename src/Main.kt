@@ -165,14 +165,13 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
                             elevator.isOpen() &&
                             elevator.onFloor() == hero.onFloor() &&
                             !hero.inElevator()) {
-                        hero.getInElevator()
+                        hero.getInElevator(elevator)
                     }
                 }
                 Key.Down -> {
                     console.log("leave elevator:",hero.group.o.position.x)
                     if (elevator.isOpen() && hero.inElevator()) {
-                        hero.group.o.position.x = 0.0
-                        hero.group.o.position.z = 0.0
+                        hero.leaveElevator(elevator)
                     }
                 }
                 Key.Left -> { if (!hero.inElevator()) { hero.beginMove(-1.0) } }
