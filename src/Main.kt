@@ -159,7 +159,6 @@ class WinMode(text : String, divName : String, returnToMode: IGameMode) : InScen
         god?.setAttribute("style", "display: flex")
         val chars = Math.round(shownTime * (text.size.toDouble() / (showTime * 0.75)))
         textDiv?.innerHTML = text.substring(0, chars)
-        console.log(text.substring(0, chars))
         if (shownTime >= showTime) {
             god?.setAttribute("style", "display: none")
             return ModeChange(true, null)
