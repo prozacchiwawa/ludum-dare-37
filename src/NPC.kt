@@ -15,7 +15,8 @@ interface NPCBehavior {
 }
 
 /* A random NPC starts from one room, goes to another room and despawns */
-class RandomNPCBehavior(fd : FloorAndDoor) : NPCBehavior {
+class RandomNPCBehavior(fd : FloorAndDoor, nearness : Double) : NPCBehavior {
+    val nearness = nearness
     var inElevator = false
     val fd = fd
     override fun update(b : BuildingMap, e : Elevator, h : Hero, n : NPC) : NPCState {
@@ -41,14 +42,14 @@ class RandomNPCBehavior(fd : FloorAndDoor) : NPCBehavior {
             if (e.isOpen() && inElevator) {
                 inElevator = false
                 n.leaveElevator(e)
-            } else if (Math.abs(door.position.x - n.group.o.position.x) < 1.0) {
+            } else if (Math.abs(door.position.x - n.group.o.position.x + 1.0) < 5.0) {
                 return NPCState(n.nearHero(h), false, true)
             } else if (door.position.x < n.group.o.position.x) {
                 n.beginMove(-1.0)
             } else {
                 n.beginMove(1.0)
             }
-            return NPCState(n.nearHero(h), false, false)
+            return NPCState(n.nearHero(h,nearness), false, false)
         }
     }
 }
@@ -222,8 +223,8 @@ class NPC(res : ResBundle) : InScene {
 
     val toBeClose = 6.0
 
-    fun nearHero(h : Hero) : Boolean {
-        return actorDistance(this.group.o, h.group.o) < toBeClose
+    fun nearHero(h : Hero, nearness : Double = -1.0) : Boolean {
+        return actorDistance(this.group.o, h.group.o) < if (nearness > 0.0) { nearness } else { toBeClose }
     }
 
     override fun addToScene(scene : Scene) {

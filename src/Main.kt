@@ -92,6 +92,12 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         return FloorAndDoor(Math.floor(rand() * buildingMap.floors.size), Math.floor(rand() * numDoors))
     }
 
+    fun distanceToOneRoom(fd : FloorAndDoor) : Double {
+        val oneRoomLocation = buildingMap.getDoor(oneroom.floor, oneroom.door)
+        val fromLocation = buildingMap.getDoor(fd.floor, fd.door)
+        return actorDistance(oneRoomLocation, fromLocation)
+    }
+
     init {
         camera.o.position.x = 0
         camera.o.position.z = 15.0
@@ -131,6 +137,30 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         }
     }
 
+    fun handleNPCs(scene : Scene, m : GameUpdateMessage) {
+        if (curTime > nextSpawnTime && npcs.size < wantNPCs) {
+            nextSpawnTime = curTime + timeBetweenSpawns
+            val fd = randomFloorAndDoor()
+            val pursuer = (rand() * wanted) > 0.25
+            val dist = distanceToOneRoom(fd)
+            val participant = Math.log(0.5 / dist) > 1.0
+            val closeness = if (participant) { 10.0 } else { 3.0 }
+            console.log("participant",dist,fd,participant)
+            spawnNPC(scene, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor(), closeness) })
+        }
+
+        val toDespawn : MutableList<Int> = mutableListOf()
+        npcs.forEach { npc ->
+            val res = npc.value.b.update(buildingMap, elevator, hero, npc.value.n)
+            npc.value.n.update(m.time)
+            if (res.despawn) {
+                npc.value.n.removeFromScene(scene)
+                toDespawn.add(npc.key)
+            }
+        }
+        toDespawn.forEach { x -> npcs.remove(x) }
+    }
+
     fun update(scene : Scene, m : GameUpdateMessage) {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
@@ -143,24 +173,7 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
             camera.o.position.y = (camera.o.position.y + (targetCameraY * 3.0 * m.time)) / (1.0 + 3.0 * m.time)
             camera.o.lookAt( 0, 1.0, 0.0 )
             light.o.position.set( camera.o.position.x, camera.o.position.y, 10000.0 )
-
-            if (curTime > nextSpawnTime && npcs.size < wantNPCs) {
-                nextSpawnTime = curTime + timeBetweenSpawns
-                val fd = randomFloorAndDoor()
-                val pursuer = (rand() * wanted) > 0.25
-                spawnNPC(scene, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor()) })
-            }
-
-            val toDespawn : MutableList<Int> = mutableListOf()
-            npcs.forEach { npc ->
-                val res = npc.value.b.update(buildingMap, elevator, hero, npc.value.n)
-                npc.value.n.update(m.time)
-                if (res.despawn) {
-                    npc.value.n.removeFromScene(scene)
-                    toDespawn.add(npc.key)
-                }
-            }
-            toDespawn.forEach { x -> npcs.remove(x) }
+            handleNPCs(scene, m)
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
             when (m.key) {
                 Key.C -> {
@@ -221,12 +234,14 @@ fun doError(container : org.w3c.dom.Element, content : org.w3c.dom.Element, t : 
 
 var lastTime = 0.0
 
-fun render(renderer : dynamic, scene : Scene, game : GameContainer) {
+fun render(renderer : dynamic, setBadges : (Int) -> Unit, setWantedStars : (Double) -> Unit, scene : Scene, game : GameContainer) {
     var curTime = getCurTime()
     game.update(scene, GameUpdateMessage(curTime - lastTime))
+    setBadges(game.badges)
+    setWantedStars(game.wanted)
     lastTime = getCurTime()
     renderer.render( scene.o, game.camera.o )
-    kotlin.browser.window.requestAnimationFrame { render(renderer,scene,game) }
+    kotlin.browser.window.requestAnimationFrame { render(renderer,setBadges,setWantedStars,scene,game) }
 }
 
 fun main(args: Array<String>) {
@@ -255,6 +270,36 @@ fun main(args: Array<String>) {
         val loader = newJSONLoader()
         val toLoad = arrayOf(SKINNER_RES)
         val loadedResources : MutableMap<String, ResBundle> = mutableMapOf()
+
+        val badgesElement = kotlin.browser.window.document.getElementById("gameui-badges")
+        val starsElement = kotlin.browser.window.document.getElementById("gameui-wanted")
+
+        val setWantedStars = { wanted : Double ->
+            val stars = Math.round(5.0 * wanted)
+            val maxWanted = Math.max(stars, 5)
+            val minWanted = Math.min(stars, 0)
+            var res = ""
+            for (i in 1..5) {
+                if (i <= stars) {
+                    res += "\u2605"
+                } else {
+                    res += "\u2606"
+                }
+            }
+            if (starsElement != null) {
+                starsElement.innerHTML = res
+            }
+        }
+
+        val setBadges = { badges : Int ->
+            var res = ""
+            for (i in 1..badges) {
+                res += "<i class='badge'>\u268e</i>"
+            }
+            if (badgesElement != null) {
+                badgesElement.innerHTML = res
+            }
+        }
 
         val runGame = {
             try {
@@ -286,7 +331,7 @@ fun main(args: Array<String>) {
                 }
                 kotlin.browser.window.addEventListener("resize", onResize)
 
-                render(renderer, scene, game)
+                render(renderer, setBadges, setWantedStars, scene, game)
             } catch (e : Exception) {
                 if (error != null && errorContent != null) {
                     doError(error, errorContent, "${e}");

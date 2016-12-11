@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link href="https://fonts.googleapis.com/css?family=Space+Mono" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         .gamerender {
             position: absolute;
@@ -43,10 +45,67 @@
             width: 100%;
             height: 100%;
         }
+
+        .gameui {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 10%;
+            font-size: 5vmin;
+            color: white;
+            z-index: 2;
+            font-family: 'Space Mono', monospace;
+            /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#000000+0,000000+100&0.65+0,0+100;Neutral+Density */
+            background: -moz-linear-gradient(top,  rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%); /* FF3.6-15 */
+            background: -webkit-linear-gradient(top,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* Chrome10-25,Safari5.1-6 */
+            background: linear-gradient(to bottom,  rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+        }
+
+        .badge {
+            font-size: 7vmin;
+            padding: 0.5vmin;
+            border-radius: 0.5vmin;
+            border: 0.5vmin solid white;
+            line-height: 3.5vmin;
+            height: 5vmin;
+        }
+
+        .gameui-header {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .gameui-badges {
+            display: flex;
+            flex-grow: 1;
+        }
+
+        .gameui-badges:before {
+            content: "Attempts:"
+        }
+
+        .gameui-wanted {
+            display: flex;
+            flex-grow: 0;
+        }
+
+        .gameui-wanted:before {
+            content: "Wanted:"
+        }
     </style>
 </head>
 <body>
-<div id="gamerender" class="gamerender">
+<div id="gamerender" class="gamerender"></div>
+<div id="gameui" class="gameui">
+    <div id="gameui-header" class="gameui-header">
+        <div id="gameui-badges" class="gameui-badges"></div>
+        <div id="gameui-wanted" class="gameui-wanted"></div>
+    </div>
+</div>
 </div>
 <div id="error" class="error">
     <div id="error-content" class="error-center">
