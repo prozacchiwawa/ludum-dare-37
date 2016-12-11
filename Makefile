@@ -14,6 +14,9 @@ copy: out/production/oneroom/index.html \
 out/production/oneroom/index.html: index.html
 	cp index.html out/production/oneroom
 
+out/production/oneroom/KarlSheet.png: assets/KarlSheet.png
+	cp $< $@
+
 out/production/oneroom/WalterSheet.png: assets/WalterSheet.png
 	cp $< $@
 

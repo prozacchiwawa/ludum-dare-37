@@ -145,13 +145,13 @@ class ClueMode(clue : String, returnToMode : IGameMode) : InScene, IGameMode {
     override fun getCamera() : Camera { return returnToMode.getCamera() }
 }
 
-class WinMode(text : String, returnToMode: IGameMode) : InScene, IGameMode {
+class WinMode(text : String, divName : String, returnToMode: IGameMode) : InScene, IGameMode {
     val text = text
     var shownTime = 0.0
     val showTime = 30.0
     val returnToMode = returnToMode
-    val deathDiv = kotlin.browser.document.getElementById("win-div")
-    val textDiv = kotlin.browser.document.getElementById("win-center")
+    val deathDiv = kotlin.browser.document.getElementById("${divName}-div")
+    val textDiv = kotlin.browser.document.getElementById("${divName}-center")
 
     override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
         val god = deathDiv
@@ -248,6 +248,7 @@ fun main(args: Array<String>) {
         val stateStack : MutableList<IGameMode> = mutableListOf()
         val game = GameContainer()
         stateStack.add(game)
+        stateStack.add(WinMode(introText, "win", game))
         val gameState = {
             stateStack[stateStack.size - 1]
         }
