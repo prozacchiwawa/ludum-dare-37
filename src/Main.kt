@@ -9,7 +9,7 @@ enum class GameUpdateMessageTag {
 }
 
 enum class Key(v : Int) {
-    None(0), Space(32), C('C'.toInt()), Left(37), Up(38), Right(39), Down(40);
+    None(0), Space(32), C('C'.toInt()), S('S'.toInt()), Left(37), Up(38), Right(39), Down(40);
     val v = v
 }
 
@@ -40,10 +40,11 @@ class GameUpdateMessage {
 val codemap : Map<Int, Key> =
         listOf(Key.C, Key.Space, Key.Left, Key.Up, Key.Down, Key.Right).map({ k -> Pair<Int,Key>(k.v,k) }).toMap()
 
-class SpawnedNPC(id : Int, n : NPC, b : NPCBehavior) {
+class SpawnedNPC(id : Int, n : NPC, pursuer : Boolean, b : NPCBehavior) {
     val id = id
     val n = n
     val b = b
+    val pursuer = pursuer
 }
 
 val timeBetweenSpawns = 5.0
@@ -122,19 +123,30 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
         return Math.round((hero.group.o.position.y - 1.0) / 2.0)
     }
 
-    fun spawnNPC(scene : Scene, floor : Int, door : Int, resname : String, behavior : NPCBehavior) {
+    fun spawnNPC(scene : Scene, pursuer : Boolean, floor : Int, door : Int, resname : String, behavior : NPCBehavior) {
         console.log("Spawn NPC", resname, "on", floor, "at", door)
         val floorObj = floors[floor]
         floorObj.toggleDoor(door)
         val gotRes = loadedResources.get(resname)
         if (gotRes != null) {
-            val spawned = SpawnedNPC(nextId++, NPC(gotRes), behavior)
+            val spawned = SpawnedNPC(nextId++, NPC(gotRes), pursuer, behavior)
             spawned.n.group.o.position.x = floorObj.doors[door].o.position.x + 1
             spawned.n.group.o.position.y = (floor + 1) * floorHeight
             spawned.n.group.o.position.z = 2.0
             spawned.n.addToScene(scene)
             npcs.put(spawned.id, spawned)
         }
+    }
+
+    fun loseLife() {
+        badges = Math.max(0, badges - 1)
+        if (badges == 0) {
+            gameOver()
+        }
+    }
+
+    fun gameOver() {
+
     }
 
     fun handleNPCs(scene : Scene, m : GameUpdateMessage) {
@@ -144,22 +156,37 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
             val pursuer = (rand() * wanted) > 0.25
             val dist = distanceToOneRoom(fd)
             val participant = Math.log(0.5 / dist) > 1.0
-            val closeness = if (participant) { 10.0 } else { 3.0 }
-            console.log("participant",dist,fd,participant)
-            spawnNPC(scene, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor(), closeness) })
+            val closeness = if (participant) { 5.0 } else { 3.0 }
+            spawnNPC(scene, pursuer, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor(), closeness) })
         }
 
         val toDespawn : MutableList<Int> = mutableListOf()
+        var suspicious = 0
+        var catching = 0
         npcs.forEach { npc ->
             val res = npc.value.b.update(buildingMap, elevator, hero, npc.value.n)
             npc.value.n.update(m.time)
+            if (res.nearHero) {
+                suspicious++
+                val dist = if (npc.value.pursuer) { actorDistance(npc.value.n.group.o, hero.group.o) } else { 10000.0 }
+                if (npc.value.pursuer && (dist < 1.5 || (dist < 3.5 && hero.inElevator()))) {
+                    catching++
+                }
+            }
             if (res.despawn) {
                 npc.value.n.removeFromScene(scene)
                 toDespawn.add(npc.key)
             }
         }
+        wanted = Math.max(0.0, Math.min(1.1, wanted + (m.time * (suspicious.toDouble() - 0.5) / 10.0)))
+        caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.5) / 2.5))
+        if (caught >= 1.0) {
+            loseLife()
+        }
         toDespawn.forEach { x -> npcs.remove(x) }
     }
+
+    val stunDistance = 2.0
 
     fun update(scene : Scene, m : GameUpdateMessage) {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
@@ -182,6 +209,10 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
                         hero.group.o.position.x <= 1) {
                         elevator.callButton(heroCurrentFloor())
                     }
+                }
+                Key.S -> {
+                    val heroFloor = heroCurrentFloor()
+                    npcs.filter { e -> e.value.n.onFloor() == heroFloor }.filter { e -> actorDistance(e.value.n.group.o, hero.group.o) < stunDistance }.forEach { e -> e.value.n.stun() }
                 }
                 Key.Up -> {
                     console.log("enter elevator:",elevator.isOpen(), hero.inElevator())
@@ -234,11 +265,11 @@ fun doError(container : org.w3c.dom.Element, content : org.w3c.dom.Element, t : 
 
 var lastTime = 0.0
 
-fun render(renderer : dynamic, setBadges : (Int) -> Unit, setWantedStars : (Double) -> Unit, scene : Scene, game : GameContainer) {
+fun render(renderer : dynamic, setBadges : (Int) -> Unit, setWantedStars : (Double,Double) -> Unit, scene : Scene, game : GameContainer) {
     var curTime = getCurTime()
     game.update(scene, GameUpdateMessage(curTime - lastTime))
     setBadges(game.badges)
-    setWantedStars(game.wanted)
+    setWantedStars(game.wanted, game.caught)
     lastTime = getCurTime()
     renderer.render( scene.o, game.camera.o )
     kotlin.browser.window.requestAnimationFrame { render(renderer,setBadges,setWantedStars,scene,game) }
@@ -274,10 +305,12 @@ fun main(args: Array<String>) {
         val badgesElement = kotlin.browser.window.document.getElementById("gameui-badges")
         val starsElement = kotlin.browser.window.document.getElementById("gameui-wanted")
 
-        val setWantedStars = { wanted : Double ->
+        val setWantedStars = { wanted : Double, caught : Double ->
             val stars = Math.round(5.0 * wanted)
             val maxWanted = Math.max(stars, 5)
             val minWanted = Math.min(stars, 0)
+            val nonred = Math.round(254.0 * Math.max(0.0, 1.0 - caught))
+            starsElement?.setAttribute("style","color: rgb(255,${nonred},${nonred})")
             var res = ""
             for (i in 1..5) {
                 if (i <= stars) {

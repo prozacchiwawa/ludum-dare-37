@@ -131,6 +131,8 @@ class NPC(res : ResBundle) : InScene {
 
     var hello : dynamic = null
 
+    val stunTime = 1.5
+
     init {
         val smesh = Mesh(newSkinnedMesh(res.geometry, newMeshFaceMaterial(res.materials)))
         this.stored = smesh
@@ -219,6 +221,12 @@ class NPC(res : ResBundle) : InScene {
         e.vacate()
         group.o.position.x = 0.0
         group.o.position.z = 2.0
+    }
+
+    fun stun() {
+        moving = true
+        movedir = 0.0
+        moveexpire = stunTime
     }
 
     val toBeClose = 6.0
