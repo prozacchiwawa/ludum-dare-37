@@ -194,7 +194,7 @@ class GameContainer() : InScene, IGameMode {
     fun enterDoor(scene : Scene, floor : Int, door : Int) : ModeChange {
         console.log("want",oneroom,"have",floor,door)
         if (floor == oneroom.floor + 1 && door == oneroom.door) {
-            return ModeChange(false, WinMode(vicText, this))
+            return ModeChange(false, WinMode(vicText, "win", this))
         }
         val wantedStars = npcs.filter { e ->
             e.value.n.onFloor() == hero.onFloor() && actorDistance(e.value.n.group.o, hero.group.o) < 7.0
