@@ -141,7 +141,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            min-height: 10vmin;
+            min-height: 25vh;
             background-color: rgba(0,0,0,0.4);
             z-index: 3;
             display: flex;
@@ -151,6 +151,27 @@
         }
 
         .clue-center {
+            display: flex;
+            color: white;
+            min-height: 10vmin;
+        }
+
+        .win-div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 50vh;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .win-center {
             display: flex;
             color: white;
             min-height: 10vmin;
@@ -172,6 +193,9 @@
     </div>
     <div id="clue-div" class="clue-div" style="display: none">
         <div id="clue-center" class="clue-center"></div>
+    </div>
+    <div id="win-div" class="win-div" style="display: none">
+        <div id="win-center" class="win-center"></div>
     </div>
 </div>
 </div>

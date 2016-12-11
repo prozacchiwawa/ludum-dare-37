@@ -161,7 +161,7 @@ class NPC(res : String) : InScene {
         if (!moving) {
             moving = true
             moveexpire = 0.3
-            movedir = x
+            movedir = x * 0.9
         } else {
             movenext = x
         }

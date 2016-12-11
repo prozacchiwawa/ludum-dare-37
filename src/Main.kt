@@ -122,12 +122,43 @@ class ClueMode(clue : String, returnToMode : IGameMode) : InScene, IGameMode {
     val showTime = 5.0
     val returnToMode = returnToMode
     val deathDiv = kotlin.browser.document.getElementById("clue-div")
+    val textDiv = kotlin.browser.document.getElementById("clue-center")
 
     override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
         val god = deathDiv
         shownTime += m.time
         god?.setAttribute("style", "display: flex")
-        god?.innerHTML = clue
+        textDiv?.innerHTML = clue
+        if (shownTime >= showTime) {
+            god?.setAttribute("style", "display: none")
+            return ModeChange(true, null)
+        }
+        return ModeChange(false, null)
+    }
+
+    override fun addToScene(scene : Scene) {
+    }
+
+    override fun removeFromScene(scene : Scene) {
+    }
+
+    override fun getCamera() : Camera { return returnToMode.getCamera() }
+}
+
+class WinMode(text : String, returnToMode: IGameMode) : InScene, IGameMode {
+    val text = text
+    var shownTime = 0.0
+    val showTime = 30.0
+    val returnToMode = returnToMode
+    val deathDiv = kotlin.browser.document.getElementById("win-div")
+    val textDiv = kotlin.browser.document.getElementById("win-center")
+
+    override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
+        val god = deathDiv
+        shownTime += m.time
+        god?.setAttribute("style", "display: flex")
+        val chars = Math.round((showTime * 0.75) / text.size)
+        textDiv?.innerHTML = text.substring(0, chars)
         if (shownTime >= showTime) {
             god?.setAttribute("style", "display: none")
             return ModeChange(true, null)

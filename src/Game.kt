@@ -164,7 +164,7 @@ class GameContainer() : InScene, IGameMode {
                 toDespawn.add(npc.key)
             }
         }
-        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.05) / 4.0)))
+        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.05) / 7.0)))
         caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.2) / 2.5))
         if (caught >= 1.0) {
             return loseLife(scene)
