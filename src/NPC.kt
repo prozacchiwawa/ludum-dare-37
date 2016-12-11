@@ -135,17 +135,16 @@ class NPC(res : String) : InScene {
     var animator : TextureAnimator? = null
 
     init {
+        console.log("npc", res)
         loadTexture(res, { texture ->
             this.texture = texture
             val animator = TextureAnimator(texture, 16, 2, 32, 60.0)
             this.animator = animator
             animator.play(AnimRestForward)
-            console.log(texture)
             val smesh = Sprite(texture, 1.0, 2.0)
             this.stored = smesh
+            smesh.group.o.position.y += 1.0
             group.add(smesh.group)
-            group.o.position.z = 2.0
-            group.o.position.y = floorHeight + 1.0
         })
         group.o.position.z = 2.0
         group.o.position.y = floorHeight
@@ -178,6 +177,7 @@ class NPC(res : String) : InScene {
     var playing = false
 
     fun update(t : Double) {
+        animator?.update(t)
         if (mixer != null) {
             mixer.update(t)
         }
