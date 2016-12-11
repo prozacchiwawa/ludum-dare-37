@@ -99,8 +99,8 @@ class Hero : InScene {
         e.occupy(
             { o ->
                 group.o.position.x = o.position.x
-                group.o.position.y = o.position.y + 1.0
-                group.o.position.z = o.position.z
+                group.o.position.y = o.position.y
+                group.o.position.z = o.position.z - 1.0
             }
         )
     }
@@ -108,7 +108,7 @@ class Hero : InScene {
     fun leaveElevator(e : Elevator) {
         e.vacate()
         group.o.position.x = 0.0
-        group.o.position.z = 0.0
+        group.o.position.z = 2.0
     }
 
     override fun addToScene(scene : Scene) {

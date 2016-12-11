@@ -69,10 +69,11 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
     var curTime = 0.0
 
     val hero = Hero()
-    val elevator = Elevator(1, 6)
+    val numFloors = 6
+    val elevator = Elevator(1, numFloors)
 
-    val buildingMap = StaticBuildMap(6)
-    val floors = (1..buildingMap.floors).map({n -> Floor(n)}).toList()
+    val floors = (1..numFloors).map({n -> Floor(n)}).toList()
+    val buildingMap = StaticBuildMap(floors)
 
     var oneroom = randomFloorAndDoor()
 
@@ -83,8 +84,12 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
 
     var nextId = 0
 
+    var wanted = 0.0
+    var caught = 0.0
+    var badges = 3
+
     fun randomFloorAndDoor() : FloorAndDoor {
-        return FloorAndDoor(Math.floor(rand() * buildingMap.floors), Math.floor(rand() * numDoors))
+        return FloorAndDoor(Math.floor(rand() * buildingMap.floors.size), Math.floor(rand() * numDoors))
     }
 
     init {
@@ -142,13 +147,20 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
             if (curTime > nextSpawnTime && npcs.size < wantNPCs) {
                 nextSpawnTime = curTime + timeBetweenSpawns
                 val fd = randomFloorAndDoor()
-                spawnNPC(scene, fd.floor, fd.door, SKINNER_RES, PursueHeroNPCBehavior())
+                val pursuer = (rand() * wanted) > 0.25
+                spawnNPC(scene, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor()) })
             }
 
+            val toDespawn : MutableList<Int> = mutableListOf()
             npcs.forEach { npc ->
-                npc.value.b.update(buildingMap, elevator, hero, npc.value.n)
+                val res = npc.value.b.update(buildingMap, elevator, hero, npc.value.n)
                 npc.value.n.update(m.time)
+                if (res.despawn) {
+                    npc.value.n.removeFromScene(scene)
+                    toDespawn.add(npc.key)
+                }
             }
+            toDespawn.forEach { x -> npcs.remove(x) }
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
             when (m.key) {
                 Key.C -> {
@@ -169,7 +181,7 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) {
                     }
                 }
                 Key.Down -> {
-                    console.log("leave elevator:",hero.group.o.position.x)
+                    console.log("leave elevator:",elevator.isOpen(),hero.inElevator())
                     if (elevator.isOpen() && hero.inElevator()) {
                         hero.leaveElevator(elevator)
                     }

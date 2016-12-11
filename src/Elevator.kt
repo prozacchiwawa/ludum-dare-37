@@ -45,6 +45,7 @@ class Elevator(min : Int, max : Int) : InScene {
     }
 
     fun callButton(newFloor : Int) {
+        if (occupied != null) { return }
         if (floor > newFloor) {
             direction = false
         } else if (floor < newFloor) {

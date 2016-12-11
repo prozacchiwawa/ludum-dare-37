@@ -14,7 +14,47 @@ interface NPCBehavior {
     fun update(b : BuildingMap, e : Elevator, h : Hero, n : NPC) : NPCState
 }
 
+/* A random NPC starts from one room, goes to another room and despawns */
+class RandomNPCBehavior(fd : FloorAndDoor) : NPCBehavior {
+    var inElevator = false
+    val fd = fd
+    override fun update(b : BuildingMap, e : Elevator, h : Hero, n : NPC) : NPCState {
+        val heroFloor = fd.floor
+        val npcFloor = n.onFloor()
+        if (heroFloor != npcFloor) {
+            val dir = b.directionOfElevator(npcFloor, n.group.o.position.x)
+            if (dir == 0.0) {
+                if (n.moving) {
+                    n.endMove()
+                }
+                if (e.onFloor() == npcFloor && e.isOpen()) {
+                    n.getInElevator(e)
+                    inElevator = true
+                    return NPCState(n.nearHero(h), true, false)
+                }
+            } else {
+                n.beginMove(dir)
+            }
+            return NPCState(n.nearHero(h), false, false)
+        } else {
+            val door = b.getDoor(fd.floor, fd.door)
+            if (e.isOpen() && inElevator) {
+                inElevator = false
+                n.leaveElevator(e)
+            } else if (Math.abs(door.position.x - n.group.o.position.x) < 1.0) {
+                return NPCState(n.nearHero(h), false, true)
+            } else if (door.position.x < n.group.o.position.x) {
+                n.beginMove(-1.0)
+            } else {
+                n.beginMove(1.0)
+            }
+            return NPCState(n.nearHero(h), false, false)
+        }
+    }
+}
+
 class PursueHeroNPCBehavior : NPCBehavior {
+    var inElevator = false
     override fun update(b : BuildingMap, e : Elevator, h : Hero, n : NPC) : NPCState {
         val heroFloor = h.onFloor()
         val npcFloor = n.onFloor()
@@ -24,8 +64,9 @@ class PursueHeroNPCBehavior : NPCBehavior {
                 if (n.moving) {
                     n.endMove()
                 }
-                if (e.isOpen()) {
+                if (e.onFloor() == npcFloor && e.isOpen()) {
                     n.getInElevator(e)
+                    inElevator = true
                     return NPCState(n.nearHero(h), true, false)
                 }
             } else {
@@ -33,7 +74,10 @@ class PursueHeroNPCBehavior : NPCBehavior {
             }
             return NPCState(n.nearHero(h), false, false)
         } else {
-            if (h.group.o.position.x < n.group.o.position.x) {
+            if (e.isOpen() && inElevator) {
+                inElevator = false
+                n.leaveElevator(e)
+            } else if (h.group.o.position.x < n.group.o.position.x) {
                 n.beginMove(-1.0)
             } else {
                 n.beginMove(1.0)
@@ -55,11 +99,15 @@ class DespawnBehavior(floor : Int, door : Int) {
 }
 
 interface BuildingMap {
+    fun getDoor(floor : Int, door : Int) : dynamic
     fun directionOfElevator(floor : Int, x : Double) : Double
 }
 
-class StaticBuildMap(floors : Int) : BuildingMap {
+class StaticBuildMap(floors : List<Floor>) : BuildingMap {
     val floors = floors
+    override fun getDoor(floor : Int, door : Int) : dynamic {
+        return floors[floor].doors[door].o
+    }
     override fun directionOfElevator(floor : Int, x : Double) : Double {
         if (x < -1) { return 1.0 }
         else if (x > 1) { return -1.0 }
@@ -71,6 +119,7 @@ class NPC(res : ResBundle) : InScene {
     val group = newGroup()
 
     var moving = false
+    var movenext = 0.0
     var moveexpire = 0.0
     var movedir = 0.0
     val movetime = 0.1
@@ -105,13 +154,18 @@ class NPC(res : ResBundle) : InScene {
     }
 
     fun beginMove(x : Double) {
-        moving = true
-        moveexpire = -1.0
-        movedir = x
+        if (!moving) {
+            moving = true
+            moveexpire = 0.3
+            movedir = x
+        } else {
+            movenext = x
+        }
     }
 
     fun endMove() {
         moving = false
+        movenext = 0.0
         moveexpire = movetime
     }
 
@@ -133,6 +187,12 @@ class NPC(res : ResBundle) : InScene {
             if (moveexpire == 0.0) {
                 movedir = 0.0
                 moveexpire = -1.0
+                moving = false
+                val mn = movenext
+                if (mn != 0.0) {
+                    movenext = 0.0
+                    beginMove(mn)
+                }
             }
         }
         if (inElevator() || movedir == 0.0) {
@@ -148,8 +208,8 @@ class NPC(res : ResBundle) : InScene {
         e.occupy(
                 { o ->
                     group.o.position.x = o.position.x
-                    group.o.position.y = o.position.y + 1.0
-                    group.o.position.z = o.position.z
+                    group.o.position.y = o.position.y
+                    group.o.position.z = o.position.z - 1.0
                 }
         )
     }
@@ -157,7 +217,7 @@ class NPC(res : ResBundle) : InScene {
     fun leaveElevator(e : Elevator) {
         e.vacate()
         group.o.position.x = 0.0
-        group.o.position.z = 0.0
+        group.o.position.z = 2.0
     }
 
     val toBeClose = 6.0
