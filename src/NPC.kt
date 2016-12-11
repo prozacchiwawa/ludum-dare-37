@@ -129,6 +129,7 @@ class NPC(res : String) : InScene {
     var movenext = 0.0
     var moveexpire = 0.0
     var movedir = 0.0
+    var lastmove = 0.0
     val movetime = 0.1
     var movespeed = 2.0
 
@@ -179,12 +180,19 @@ class NPC(res : String) : InScene {
         moveexpire = movetime
     }
 
+    val turnFactor = 8.0
     var playing = false
 
     fun update(t : Double) {
         animator?.update(t)
+        var inmotion = false
+        animator?.update(t)
         if (movedir != 0.0) {
-            group.o.position.x += movedir * t * movespeed
+            lastmove = (lastmove + (movedir * t * turnFactor)) / (1.0 + t * turnFactor)
+            inmotion = (lastmove > 0.0 && movedir > 0.0) || (lastmove < 0.0 && movedir < 0.0)
+            if (inmotion) {
+                group.o.position.x += movedir * t * movespeed
+            }
         }
         if (moveexpire > 0) {
             moveexpire = Math.max(moveexpire - t, 0.0)
@@ -199,12 +207,12 @@ class NPC(res : String) : InScene {
                 }
             }
         }
-        if (inElevator() || movedir == 0.0) {
+        if (Math.abs(lastmove) < 0.2) {
             animator?.play(AnimRestForward)
-        } else if (movedir < 0) {
-            animator?.play(if (moving) { AnimWalkLeft } else { AnimRestLeft })
+        } else if (lastmove > 0) {
+            animator?.play(if (inmotion) { AnimWalkRight } else { AnimRestRight })
         } else {
-            animator?.play(if (moving) { AnimWalkRight } else { AnimRestRight })
+            animator?.play(if (inmotion) { AnimWalkLeft } else { AnimRestLeft })
         }
     }
 

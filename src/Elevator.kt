@@ -21,7 +21,7 @@ class Elevator(min : Int, max : Int) : InScene {
     val elevatorDoorGeom = newBoxGeometry(1.0, 2.0, 0.1)
     val elevatorDoorMat = newMeshLambertMaterial(0x3f4f3e)
     val elevatorDoor = newMesh(elevatorDoorGeom, elevatorDoorMat)
-    val elevatorFloorGeom = newBoxGeometry(1.0, 0.1, 2.0)
+    val elevatorFloorGeom = newBoxGeometry(2.0, 0.1, 2.0)
     val elevatorFloorMat = newMeshLambertMaterial(0xdae0d9)
     val elevatorFloor = newMesh(elevatorFloorGeom, elevatorFloorMat)
     val group = newGroup()
@@ -31,6 +31,7 @@ class Elevator(min : Int, max : Int) : InScene {
         elevatorBack.o.position.z = -2.0
         elevatorDoor.o.position.y = 1.0
         elevatorDoor.o.position.z = 0.0
+        elevatorFloor.o.position.z = -1.0
         group.add(elevatorBack)
         group.add(elevatorFloor)
         group.o.position.y = floorHeight

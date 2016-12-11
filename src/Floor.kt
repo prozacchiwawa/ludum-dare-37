@@ -11,13 +11,17 @@ class Floor(number : Int) : InScene {
     val number = number
     val backWallGeom = newBoxGeometry(20.0, floorHeight, 0.2)
     val backWallMaterial = newMeshLambertMaterial(0xf2e9c4)
-    val floorGeom = newBoxGeometry(100.0, 0.2, 2.0)
+    val sideWallGeom = newBoxGeometry(0.1, floorHeight, 2.0)
+    val floorGeom = newBoxGeometry(42.0, 0.2, 2.0)
     val floorMaterial = newMeshLambertMaterial(0x006600)
     val floor = newMesh(floorGeom, floorMaterial)
     val doorGeom = newBoxGeometry(1.0, 2.2, 0.15)
     val doorMaterial = newMeshLambertMaterial(0x000055)
     val doorHandleGeom = newBoxGeometry(0.1, 0.1, 0.1)
     val doorHandleMaterial = newMeshLambertMaterial(0xffffff)
+
+    val floorLeftExt = -20.0
+    val floorRightExt = 20.0
 
     var doors : MutableList<Group> = mutableListOf()
     val group = newGroup()
@@ -35,6 +39,16 @@ class Floor(number : Int) : InScene {
         backWallRight.o.position.y = floorHeight / 2.0
         backWallRight.o.position.z = 0.0
         group.add(backWallRight)
+        val leftWall = newMesh(sideWallGeom, backWallMaterial)
+        leftWall.o.position.x = -20.5
+        leftWall.o.position.y = floorHeight / 2.0
+        leftWall.o.position.z = 1.0
+        group.add(leftWall)
+        val rightWall = newMesh(sideWallGeom, backWallMaterial)
+        rightWall.o.position.x = 20.5
+        rightWall.o.position.y = floorHeight / 2.0
+        rightWall.o.position.z = 1.0
+        group.add(rightWall)
         floor.o.position.z = 1.0
         group.add(floor)
         group.o.position.y = number * floorHeight

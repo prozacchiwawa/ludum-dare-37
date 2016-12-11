@@ -10,6 +10,7 @@ class Hero : InScene {
     var moving = false
     var moveexpire = 0.0
     var movedir = 0.0
+    var lastmove = 0.0
     val movetime = 0.1
     var movespeed = 2.0
 
@@ -57,11 +58,17 @@ class Hero : InScene {
     }
 
     var playing = false
+    val turnFactor = 8.0
 
     fun update(t : Double) {
+        var inmotion = false
         animator?.update(t)
         if (movedir != 0.0) {
-            group.o.position.x += movedir * t * movespeed
+            lastmove = (lastmove + (movedir * t * turnFactor)) / (1.0 + t * turnFactor)
+            inmotion = (lastmove > 0.0 && movedir > 0.0) || (lastmove < 0.0 && movedir < 0.0)
+            if (inmotion) {
+                group.o.position.x += movedir * t * movespeed
+            }
         }
         if (moveexpire > 0) {
             moveexpire = Math.max(moveexpire - t, 0.0)
@@ -70,16 +77,17 @@ class Hero : InScene {
                 moveexpire = -1.0
             }
         }
-        if (movedir == 0.0) {
+        if (Math.abs(lastmove) < 0.2) {
             animator?.play(AnimRestForward)
-        } else if (movedir > 0) {
-            animator?.play(if (moving) { AnimWalkRight } else { AnimRestRight })
+        } else if (lastmove > 0) {
+            animator?.play(if (inmotion) { AnimWalkRight } else { AnimRestRight })
         } else {
-            animator?.play(if (moving) { AnimWalkLeft } else { AnimRestLeft })
+            animator?.play(if (inmotion) { AnimWalkLeft } else { AnimRestLeft })
         }
     }
 
     fun getInElevator(e : Elevator) {
+        lastmove = 0.0
         e.occupy(
             { o ->
                 group.o.position.x = o.position.x

@@ -220,6 +220,13 @@ class GameContainer() : InScene, IGameMode {
         if (m.tag == GameUpdateMessageTag.NewFrame) {
             curTime += m.time
             hero.update(m.time)
+            val floor = floors[hero.onFloor()]
+            if (hero.group.o.position.x < floor.floorLeftExt) {
+                hero.group.o.position.x = floor.floorLeftExt
+            }
+            if (hero.group.o.position.x > floor.floorRightExt) {
+                hero.group.o.position.x = floor.floorRightExt
+            }
             targetCameraX = hero.group.o.position.x
             targetCameraY = hero.group.o.position.y + (floorHeight / 2.0)
             elevator.update(m.time)
