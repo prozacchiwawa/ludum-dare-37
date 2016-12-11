@@ -264,7 +264,7 @@ class GameContainer() : InScene, IGameMode {
     val stunDistance = 2.0
 
     fun enterDoor(floor : Int, door : Int) : ModeChange {
-        return ModeChange(false, Room())
+        return ModeChange(false, Room(floor, door, hero, camera))
     }
 
     override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
