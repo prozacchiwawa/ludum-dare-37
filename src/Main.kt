@@ -205,7 +205,7 @@ class GameContainer() : InScene, IGameMode {
         floorObj.toggleDoor(door)
         val spawned = SpawnedNPC(nextId++, NPC(resname), pursuer, behavior)
         spawned.n.group.o.position.x = floorObj.doors[door].o.position.x + 1
-        spawned.n.group.o.position.y = 1.0 + (floor + 1) * floorHeight
+        spawned.n.group.o.position.y = (floor + 1) * floorHeight
         spawned.n.group.o.position.z = 2.0
         spawned.n.addToScene(scene)
         npcs.put(spawned.id, spawned)
