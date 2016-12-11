@@ -36,7 +36,7 @@ class GameContainer() : InScene, IGameMode {
 
     var oneroom = randomFloorAndDoor()
 
-    var wantNPCs = 7
+    var wantNPCs = 10
     var nextSpawnTime = 0.0
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
     val genroom : MutableMap<Pair<Int,Int>, Room> = mutableMapOf()
@@ -44,6 +44,7 @@ class GameContainer() : InScene, IGameMode {
     var nextId = 0
 
     fun reset(scene : Scene) {
+        elevator.reset()
         numFloors = 6
         elevator = Elevator(1, numFloors)
         hero.group.o.posiiton.x = 0.0
@@ -60,8 +61,12 @@ class GameContainer() : InScene, IGameMode {
         addToScene(scene)
     }
 
-    fun randomFloorAndDoor() : FloorAndDoor {
-        return FloorAndDoor(Math.floor(rand() * buildingMap.floors.size), Math.floor(rand() * numDoors))
+    fun randomFloorAndDoor(floorPref : Int = -1) : FloorAndDoor {
+        if (floorPref < 0 || rand() < 0.5) {
+            return FloorAndDoor(Math.floor(rand() * buildingMap.floors.size), Math.floor(rand() * numDoors))
+        } else {
+            return FloorAndDoor(floorPref, Math.floor(rand() * numDoors))
+        }
     }
 
     fun distanceToOneRoom(fd : FloorAndDoor) : Double {
@@ -105,6 +110,7 @@ class GameContainer() : InScene, IGameMode {
     }
 
     fun loseLife(scene : Scene) : ModeChange {
+        elevator.reset()
         badges = Math.max(0, badges - 1)
         if (badges == 0) {
             wanted = 0.0
@@ -118,7 +124,7 @@ class GameContainer() : InScene, IGameMode {
             addToScene(scene)
             hero.group.o.position.x = 0.0
             hero.group.o.position.y = floorHeight
-            hero.group.o.position.z = -2.0
+            hero.group.o.position.z = 1.0
             camera.o.position.x = 0.0
             camera.o.position.y = floorHeight + 1.0
             camera.o.position.z = 15.0
@@ -186,6 +192,10 @@ class GameContainer() : InScene, IGameMode {
     val stunDistance = 2.0
 
     fun enterDoor(scene : Scene, floor : Int, door : Int) : ModeChange {
+        console.log("want",oneroom,"have",floor,door)
+        if (floor == oneroom.floor + 1 && door == oneroom.door) {
+            return ModeChange(false, WinMode(vicText, this))
+        }
         val wantedStars = npcs.filter { e ->
             e.value.n.onFloor() == hero.onFloor() && actorDistance(e.value.n.group.o, hero.group.o) < 7.0
         }.count()

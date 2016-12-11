@@ -109,7 +109,8 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
         val numProps = Math.round(rand() * maxProps)
         (0..numProps-1).forEach { n ->
             val res = propRes()
-            val prop = Prop(res, clueText(floor, door, maxFloor), if (res == TYPEWRITER_RES) { 2.0 } else { 1.0 })
+            val useDims = dims.getOrElse(res, { Pair<Double,Double>(1.0,2.0) })
+            val prop = Prop(res, clueText(floor, door, maxFloor), useDims.first, useDims.second)
             prop.group.o.position.x = (rand() * 15.0) - 7.5
             prop.group.o.position.y = floor * floorHeight
             prop.group.o.position.z = 1.0
@@ -125,7 +126,7 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
             npcs.put(npc.id, npc)
         }
         if (rand() < 0.025) {
-            props.add(Prop(KEYCARD_RES, "*", 1.0))
+            props.add(Prop(KEYCARD_RES, "*", 0.5, 0.5))
         }
     }
 

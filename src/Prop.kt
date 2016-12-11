@@ -4,7 +4,7 @@
 
 package org.sample
 
-class Prop(res : String, clue : String, width : Double) : InScene {
+class Prop(res : String, clue : String, width : Double, height : Double) : InScene {
     val group = newGroup()
 
     var stored : dynamic = null

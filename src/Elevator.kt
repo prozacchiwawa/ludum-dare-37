@@ -36,6 +36,10 @@ class Elevator(min : Int, max : Int) : InScene {
         group.o.position.y = floorHeight
     }
 
+    fun reset() {
+        occupied = null
+    }
+
     override fun addToScene(scene : Scene) {
         scene.add(group)
     }

@@ -47,7 +47,7 @@ class SpawnedNPC(id : Int, n : NPC, pursuer : Boolean, b : NPCBehavior) {
     val pursuer = pursuer
 }
 
-val timeBetweenSpawns = 5.0
+val timeBetweenSpawns = 7.0
 
 class FloorAndDoor(floor : Int, door : Int) {
     val floor = floor
@@ -157,8 +157,9 @@ class WinMode(text : String, returnToMode: IGameMode) : InScene, IGameMode {
         val god = deathDiv
         shownTime += m.time
         god?.setAttribute("style", "display: flex")
-        val chars = Math.round((showTime * 0.75) / text.size)
+        val chars = Math.round(shownTime * (text.size.toDouble() / (showTime * 0.75)))
         textDiv?.innerHTML = text.substring(0, chars)
+        console.log(text.substring(0, chars))
         if (shownTime >= showTime) {
             god?.setAttribute("style", "display: none")
             return ModeChange(true, null)
