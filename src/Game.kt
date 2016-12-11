@@ -8,6 +8,8 @@ var wanted = 0.0
 var caught = 0.0
 var badges = 3
 
+val maxWanted = 1.7
+
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
  * if an NPC will spawn, it'll be near the user, slightly more likely in the direction of the one room.
  */
@@ -156,8 +158,8 @@ class GameContainer() : InScene, IGameMode {
                 toDespawn.add(npc.key)
             }
         }
-        wanted = Math.max(0.0, Math.min(1.1, wanted + (m.time * (suspicious.toDouble() - 0.5) / 15.0)))
-        caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.5) / 2.5))
+        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.5) / 3.0)))
+        caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.2) / 2.5))
         if (caught >= 1.0) {
             return loseLife(scene)
         }
@@ -178,6 +180,10 @@ class GameContainer() : InScene, IGameMode {
     val stunDistance = 2.0
 
     fun enterDoor(floor : Int, door : Int) : ModeChange {
+        val wantedStars = npcs.filter { e ->
+            e.value.n.onFloor() == hero.onFloor() && actorDistance(e.value.n.group.o, hero.group.o) < 7.0
+        }.count()
+        wanted = Math.min(maxWanted, wanted + wantedStars.toDouble() / 5.0)
         val oldRoom = genroom.get(Pair<Int,Int>(floor, door))
         if (oldRoom != null) {
             return ModeChange(false, oldRoom)

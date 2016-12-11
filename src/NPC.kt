@@ -231,7 +231,8 @@ class NPC(res : String) : InScene {
     val toBeClose = 6.0
 
     fun nearHero(h : Hero, nearness : Double = -1.0) : Boolean {
-        return actorDistance(this.group.o, h.group.o) < if (nearness > 0.0) { nearness } else { toBeClose }
+        return h.onFloor() == onFloor() &&
+                actorDistance(this.group.o, h.group.o) < if (nearness > 0.0) { nearness } else { toBeClose }
     }
 
     override fun addToScene(scene : Scene) {
