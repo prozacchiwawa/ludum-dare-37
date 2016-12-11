@@ -25,7 +25,7 @@ class Hero : InScene {
             this.texture = texture
             val animator = TextureAnimator(texture, 16, 2, 32, 60.0)
             this.animator = animator
-            animator.play(0,32)
+            animator.play(AnimRestForward)
             console.log(texture)
             val smesh = Sprite(texture, 1.0, 2.0)
             this.stored = smesh
@@ -74,6 +74,13 @@ class Hero : InScene {
                 movedir = 0.0
                 moveexpire = -1.0
             }
+        }
+        if (movedir == 0.0) {
+            animator?.play(AnimRestForward)
+        } else if (movedir > 0) {
+            animator?.play(if (moving) { AnimWalkRight } else { AnimRestRight })
+        } else {
+            animator?.play(if (moving) { AnimWalkLeft } else { AnimRestLeft })
         }
     }
 

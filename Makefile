@@ -2,25 +2,21 @@ all: copy
 
 copy: out/production/oneroom/index.html \
 	out/production/oneroom/three.min.js \
-	out/production/oneroom/SkinnerRig1x1.json \
-	out/production/oneroom/SkinnerWalk1x1.json \
-	out/production/oneroom/SkinnerWalk2x1.json \
-	out/production/oneroom/KolchakRig.json
+	out/production/oneroom/WalterSheet.png \
+	out/production/oneroom/CopSheet01.png \
+	out/production/oneroom/KarlSheet.png
 
 out/production/oneroom/index.html: index.html
 	cp index.html out/production/oneroom
 
-out/production/oneroom/KolchakRig.json: assets/KolchakRig.json
-	cp assets/KolchakRig.json out/production/oneroom
+out/production/oneroom/WalterSheet.png: assets/WalterSheet.png
+	cp $< $@
 
-out/production/oneroom/SkinnerRig1x1.json: assets/SkinnerRig1x1.json
-	cp assets/SkinnerRig1x1.json out/production/oneroom
+out/production/oneroom/KarlSheet.png: assets/KarlSheet.png
+	cp $< $@
 
-out/production/oneroom/SkinnerWalk1x1.json: assets/SkinnerWalk1x1.json
-	cp assets/SkinnerWalk1x1.json out/production/oneroom
-
-out/production/oneroom/SkinnerWalk2x1.json: assets/SkinnerWalk2x1.json
-	cp assets/SkinnerWalk2x1.json out/production/oneroom
+out/production/oneroom/CopSheet01.png: assets/CopSheet01.png
+	cp $< $@
 
 out/production/oneroom/three.min.js: three.js-master/build/three.min.js
 	cp three.js-master/build/three.min.js out/production/oneroom

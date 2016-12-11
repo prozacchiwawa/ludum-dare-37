@@ -116,7 +116,7 @@ class StaticBuildMap(floors : List<Floor>) : BuildingMap {
     }
 }
 
-class NPC(res : ResBundle) : InScene {
+class NPC(res : String) : InScene {
     val group = newGroup()
 
     var moving = false
@@ -129,22 +129,25 @@ class NPC(res : ResBundle) : InScene {
     var stored : dynamic = null
     var mixer : dynamic = null
 
-    var hello : dynamic = null
-
     val stunTime = 1.5
 
+    var texture : dynamic = null
+    var animator : TextureAnimator? = null
+
     init {
-        val smesh = Mesh(newSkinnedMesh(res.geometry, newMeshFaceMaterial(res.materials)))
-        this.stored = smesh
-        val holderGroup = newGroup()
-        holderGroup.o.position.y = 0.0
-        mixer = newAnimationMixer(smesh)
-        hello = mixer.clipAction(res.geometry.animations[0])
-        hello.enabled = true
-        holderGroup.add(smesh)
-        group.add(holderGroup)
+        loadTexture(res, { texture ->
+            this.texture = texture
+            val animator = TextureAnimator(texture, 16, 2, 32, 60.0)
+            this.animator = animator
+            animator.play(AnimRestForward)
+            console.log(texture)
+            val smesh = Sprite(texture, 1.0, 2.0)
+            this.stored = smesh
+            group.add(smesh.group)
+            group.o.position.z = 2.0
+            group.o.position.y = floorHeight + 1.0
+        })
         group.o.position.z = 2.0
-        group.o.rotation.y = Math.PI / 2.0
         group.o.position.y = floorHeight
     }
 
@@ -178,10 +181,6 @@ class NPC(res : ResBundle) : InScene {
         if (mixer != null) {
             mixer.update(t)
         }
-        if (!playing && hello != null) {
-            playing = true
-            hello.play()
-        }
         if (movedir != 0.0) {
             group.o.position.x += movedir * t * movespeed
         }
@@ -199,11 +198,11 @@ class NPC(res : ResBundle) : InScene {
             }
         }
         if (inElevator() || movedir == 0.0) {
-            group.o.rotation.y = 0
+            animator?.play(AnimRestForward)
         } else if (movedir < 0) {
-            group.o.rotation.y = -Math.PI / 2.0
+            animator?.play(if (moving) { AnimWalkLeft } else { AnimRestLeft })
         } else {
-            group.o.rotation.y = Math.PI / 2.0
+            animator?.play(if (moving) { AnimWalkRight } else { AnimRestRight })
         }
     }
 

@@ -119,7 +119,7 @@ class GameOverMode(returnToMode : IGameMode) : InScene, IGameMode {
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
  * if an NPC will spawn, it'll be near the user, slightly more likely in the direction of the one room.
  */
-class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, IGameMode {
+class GameContainer() : InScene, IGameMode {
     val light = newLight(0xeeeeee)
 
     val aspect =
@@ -143,7 +143,6 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, 
     var wantNPCs = 10
     var nextSpawnTime = 0.0
     val npcs : MutableMap<Int, SpawnedNPC> = mutableMapOf()
-    val loadedResources = loadedResources
 
     var nextId = 0
 
@@ -204,15 +203,12 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, 
         console.log("Spawn NPC", resname, "on", floor, "at", door)
         val floorObj = floors[floor]
         floorObj.toggleDoor(door)
-        val gotRes = loadedResources.get(resname)
-        if (gotRes != null) {
-            val spawned = SpawnedNPC(nextId++, NPC(gotRes), pursuer, behavior)
-            spawned.n.group.o.position.x = floorObj.doors[door].o.position.x + 1
-            spawned.n.group.o.position.y = (floor + 1) * floorHeight
-            spawned.n.group.o.position.z = 2.0
-            spawned.n.addToScene(scene)
-            npcs.put(spawned.id, spawned)
-        }
+        val spawned = SpawnedNPC(nextId++, NPC(resname), pursuer, behavior)
+        spawned.n.group.o.position.x = floorObj.doors[door].o.position.x + 1
+        spawned.n.group.o.position.y = (floor + 1) * floorHeight
+        spawned.n.group.o.position.z = 2.0
+        spawned.n.addToScene(scene)
+        npcs.put(spawned.id, spawned)
     }
 
     fun loseLife() : ModeChange {
@@ -237,7 +233,9 @@ class GameContainer(loadedResources : MutableMap<String, ResBundle>) : InScene, 
             val dist = distanceToOneRoom(fd)
             val participant = Math.log(0.5 / dist) > 1.0
             val closeness = if (participant) { 5.0 } else { 3.0 }
-            spawnNPC(scene, pursuer, fd.floor, fd.door, SKINNER_RES, if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor(), closeness) })
+            spawnNPC(scene, pursuer, fd.floor, fd.door,
+                    if (pursuer) { COP_RES } else { SKINNER_RES },
+                    if (pursuer) { PursueHeroNPCBehavior() } else { RandomNPCBehavior(randomFloorAndDoor(), closeness) })
         }
 
         val toDespawn : MutableList<Int> = mutableListOf()
@@ -392,10 +390,6 @@ fun main(args: Array<String>) {
 
         renderer.setClearColor( 0xdddddd, 1);
 
-        val loader = newJSONLoader()
-        val toLoad = arrayOf(SKINNER_RES)
-        val loadedResources : MutableMap<String, ResBundle> = mutableMapOf()
-
         val badgesElement = kotlin.browser.window.document.getElementById("gameui-badges")
         val starsElement = kotlin.browser.window.document.getElementById("gameui-wanted")
 
@@ -428,78 +422,59 @@ fun main(args: Array<String>) {
             }
         }
 
-        val runGame = {
-            try {
-                val stateStack : MutableList<IGameMode> = mutableListOf()
-                val game = GameContainer(loadedResources)
-                stateStack.add(game)
-                val gameState = {
-                    stateStack[stateStack.size - 1]
-                }
-                val doUpdate = { msg : GameUpdateMessage ->
-                    val modechange = gameState().update(scene, msg)
-                    if (modechange.pop) {
-                        gameState().removeFromScene(scene)
-                        stateStack.removeAt(stateStack.size - 1)
-                        gameState().addToScene(scene)
-                    }
-                    val newMode = modechange.push
-                    if (newMode != null) {
-                        gameState().removeFromScene(scene)
-                        stateStack.add(newMode)
-                        gameState().addToScene(scene)
-                    }
-                }
-
-                kotlin.browser.window.addEventListener("keydown", { evt: dynamic ->
-                    val key = codemap[evt.keyCode]
-                    if (key != null) {
-                        doUpdate(GameUpdateMessage(GameUpdateMessageTag.KeyDown, key))
-                    } else {
-                        console.log("keydown unknown", evt.keyCode)
-                    }
-                })
-                kotlin.browser.window.addEventListener("keyup", { evt: dynamic ->
-                    val key = codemap[evt.keyCode]
-                    if (key != null) {
-                        gameState().update(scene, GameUpdateMessage(GameUpdateMessageTag.KeyUp, key))
-                    } else {
-                        console.log("keyup unknown", evt.keyCode)
-                    }
-                })
-
+        val stateStack : MutableList<IGameMode> = mutableListOf()
+        val game = GameContainer()
+        stateStack.add(game)
+        val gameState = {
+            stateStack[stateStack.size - 1]
+        }
+        val doUpdate = { msg : GameUpdateMessage ->
+            val modechange = gameState().update(scene, msg)
+            if (modechange.pop) {
+                gameState().removeFromScene(scene)
+                stateStack.removeAt(stateStack.size - 1)
                 gameState().addToScene(scene)
-
-                lastTime = getCurTime()
-
-                val onResize = { evt: dynamic ->
-                    renderer.setSize(kotlin.browser.window.innerWidth, kotlin.browser.window.innerHeight)
-                }
-                kotlin.browser.window.addEventListener("resize", onResize)
-
-                render({ msg : GameUpdateMessage ->
-                    setBadges(game.badges)
-                    setWantedStars(game.wanted, game.caught)
-                    renderer.render( scene.o, game.getCamera().o )
-                    doUpdate(msg)
-                })
-            } catch (e : Exception) {
-                if (error != null && errorContent != null) {
-                    doError(error, errorContent, "${e}");
-                }
+            }
+            val newMode = modechange.push
+            if (newMode != null) {
+                gameState().removeFromScene(scene)
+                stateStack.add(newMode)
+                gameState().addToScene(scene)
             }
         }
 
-        toLoad.forEach { s ->
-            loader.load(s, { geometry, materials ->
-                (0..materials.length - 1).forEach({ i ->
-                    val material = materials[i]
-                    //material.skinning = true
-                })
-                loadedResources.put(s, ResBundle(geometry, materials))
-                if (loadedResources.size == toLoad.size) { runGame() }
-            })
+        kotlin.browser.window.addEventListener("keydown", { evt: dynamic ->
+            val key = codemap[evt.keyCode]
+            if (key != null) {
+                doUpdate(GameUpdateMessage(GameUpdateMessageTag.KeyDown, key))
+            } else {
+                console.log("keydown unknown", evt.keyCode)
+            }
+        })
+        kotlin.browser.window.addEventListener("keyup", { evt: dynamic ->
+            val key = codemap[evt.keyCode]
+            if (key != null) {
+                gameState().update(scene, GameUpdateMessage(GameUpdateMessageTag.KeyUp, key))
+            } else {
+                console.log("keyup unknown", evt.keyCode)
+            }
+        })
+
+        gameState().addToScene(scene)
+
+        lastTime = getCurTime()
+
+        val onResize = { evt: dynamic ->
+            renderer.setSize(kotlin.browser.window.innerWidth, kotlin.browser.window.innerHeight)
         }
+        kotlin.browser.window.addEventListener("resize", onResize)
+
+        render({ msg : GameUpdateMessage ->
+            setBadges(game.badges)
+            setWantedStars(game.wanted, game.caught)
+            renderer.render( scene.o, game.getCamera().o )
+            doUpdate(msg)
+        })
     } catch (e : Exception) {
         if (error != null && errorContent != null) {
             doError(error, errorContent, "${e}");

@@ -17,8 +17,7 @@ class TextureAnimator(texture : dynamic, tilesHoriz : Int, tilesVert : Int, numT
     val tilesVertical = tilesVert
     val numberOfTiles = numTiles
 
-    var start : Int = 0
-    var end : Int = numTiles
+    var alist : List<Int> = listOf(0)
 
     // note: texture passed by reference, will be updated by the update function.
 
@@ -41,23 +40,27 @@ class TextureAnimator(texture : dynamic, tilesHoriz : Int, tilesVert : Int, numT
         this.currentDisplayTime += (t * 1000.0)
         while (this.currentDisplayTime > this.tileDisplayDuration) {
             this.currentDisplayTime -= this.tileDisplayDuration;
-            if (this.currentTile < start) {
-                this.currentTile = start
+            if (this.currentTile < 0) {
+                this.currentTile = 0
             }
             this.currentTile++;
-            if (this.currentTile > this.end) {
-                this.currentTile = start;
+            if (this.currentTile >= this.alist.size) {
+                this.currentTile = 0
             }
-            var currentColumn = this.currentTile % this.tilesHorizontal;
+            val tile = this.alist[this.currentTile]
+            var currentColumn = tile % this.tilesHorizontal;
             texture.offset.x = currentColumn.toDouble() / this.tilesHorizontal.toDouble();
-            var currentRow = Math.floor( this.currentTile / this.tilesHorizontal );
+            var currentRow = Math.floor( tile / this.tilesHorizontal );
             texture.offset.y = currentRow.toDouble() / this.tilesVertical.toDouble();
         }
     };
 
     fun play(start : Int, end : Int) {
-        this.start = start
-        this.end = end
+        this.alist = (start..end - 1).toList()
+    }
+
+    fun play(alist : List<Int>) {
+        this.alist = alist
     }
 }
 
