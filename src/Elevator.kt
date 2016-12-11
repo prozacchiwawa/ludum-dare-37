@@ -10,8 +10,8 @@ class Elevator(min : Int, max : Int) : InScene {
     var open = -1.0
     val min = min
     val max = max
-    val espeed = 1.0
-    val openTime = 2.0
+    val espeed = 2.5
+    val openTime = 1.5
 
     var occupied : ((o : dynamic) -> Unit)? = null
 

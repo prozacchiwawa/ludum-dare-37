@@ -88,6 +88,12 @@ class PursueHeroNPCBehavior : NPCBehavior {
     }
 }
 
+class StaticNPCBehavior : NPCBehavior {
+    override fun update(b : BuildingMap, e : Elevator, h : Hero, n : NPC) : NPCState {
+        return NPCState(n.nearHero(h), false, false)
+    }
+}
+
 /* Graceful despawn:
  * Go toward the elevator,
  * call it,
@@ -110,8 +116,8 @@ class StaticBuildMap(floors : List<Floor>) : BuildingMap {
         return floors[floor].doors[door].o
     }
     override fun directionOfElevator(floor : Int, x : Double) : Double {
-        if (x < -1) { return 1.0 }
-        else if (x > 1) { return -1.0 }
+        if (x < -1.5 + rand()) { return 1.0 }
+        else if (x > 1.5 + rand()) { return -1.0 }
         else { return 0.0 }
     }
 }

@@ -164,19 +164,19 @@ class GameContainer() : InScene, IGameMode {
                 toDespawn.add(npc.key)
             }
         }
-        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.05) / 7.0)))
+
+        val prevWanted = wanted
+        wanted = Math.max(0.0, Math.min(maxWanted, wanted + (m.time * (suspicious.toDouble() - 0.15) / 12.0)))
         caught = Math.max(0.0, caught + (m.time * (catching.toDouble() - 0.2) / 2.5))
         if (caught >= 1.0) {
             return loseLife(scene)
         }
-        val stopPursuit = npcs.filter { e -> e.value.pursuer && actorDistance(hero.group.o, e.value.n.group.o) > 10.0 / (1.0 - Math.min(0.99, wanted)) }
-        val startPursuit = npcs.filter { e -> e.value.pursuer && actorDistance(hero.group.o, e.value.n.group.o) < 5.0 * wanted }
+        if (prevWanted >= 0.2 && wanted < 0.2) {
+            val stopPursuit = npcs.filter { e -> e.value.pursuer && actorDistance(hero.group.o, e.value.n.group.o) > 10.0 / (1.0 - Math.min(0.99, wanted)) }
 
-        stopPursuit.forEach { e ->
-            npcs.put(e.key, SpawnedNPC(e.value.id, e.value.n, e.value.pursuer, RandomNPCBehavior(randomFloorAndDoor(), 3.0)))
-        }
-        startPursuit.forEach { e ->
-            npcs.put(e.key, SpawnedNPC(e.value.id, e.value.n, e.value.pursuer, PursueHeroNPCBehavior()))
+            stopPursuit.forEach { e ->
+                npcs.put(e.key, SpawnedNPC(e.value.id, e.value.n, e.value.pursuer, RandomNPCBehavior(randomFloorAndDoor(), 3.0)))
+            }
         }
 
         toDespawn.forEach { x -> npcs.remove(x) }
@@ -185,10 +185,16 @@ class GameContainer() : InScene, IGameMode {
 
     val stunDistance = 2.0
 
-    fun enterDoor(floor : Int, door : Int) : ModeChange {
+    fun enterDoor(scene : Scene, floor : Int, door : Int) : ModeChange {
         val wantedStars = npcs.filter { e ->
             e.value.n.onFloor() == hero.onFloor() && actorDistance(e.value.n.group.o, hero.group.o) < 7.0
         }.count()
+        caught += rand() * wantedStars / 2.0
+        if (caught >= 1.0) {
+            loseLife(scene)
+        } else {
+            caught = 0.0
+        }
         wanted = Math.min(maxWanted, wanted + wantedStars.toDouble() / 5.0)
         val oldRoom = genroom.get(Pair<Int,Int>(floor, door))
         if (oldRoom != null) {
@@ -248,7 +254,7 @@ class GameContainer() : InScene, IGameMode {
                         if (floor != null) {
                             val door = floor.nearDoor(hero.group.o.position.x)
                             if (door != null && floor.doorOpen(door)) {
-                                return enterDoor(floor.number, door)
+                                return enterDoor(scene, floor.number, door)
                             }
                         }
                     }
