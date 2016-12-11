@@ -9,7 +9,7 @@ enum class GameUpdateMessageTag {
 }
 
 enum class Key(v : Int) {
-    None(0), Space(32), C('C'.toInt()), S('S'.toInt()), Left(37), Up(38), Right(39), Down(40);
+    None(0), Space(32), C('C'.toInt()), S(83), Left(37), Up(38), Right(39), Down(40);
     val v = v
 }
 
@@ -38,7 +38,7 @@ class GameUpdateMessage {
 }
 
 val codemap : Map<Int, Key> =
-        listOf(Key.C, Key.Space, Key.Left, Key.Up, Key.Down, Key.Right).map({ k -> Pair<Int,Key>(k.v,k) }).toMap()
+        listOf(Key.C, Key.S, Key.Space, Key.Left, Key.Up, Key.Down, Key.Right).map({ k -> Pair<Int,Key>(k.v,k) }).toMap()
 
 class SpawnedNPC(id : Int, n : NPC, pursuer : Boolean, b : NPCBehavior) {
     val id = id
@@ -195,10 +195,6 @@ class GameContainer() : InScene, IGameMode {
         floors.forEach { f -> f.removeFromScene(scene) }
     }
 
-    fun heroCurrentFloor() : Int {
-        return Math.round((hero.group.o.position.y - 1.0) / 2.0)
-    }
-
     fun spawnNPC(scene : Scene, pursuer : Boolean, floor : Int, door : Int, resname : String, behavior : NPCBehavior) {
         console.log("Spawn NPC", resname, "on", floor, "at", door)
         val floorObj = floors[floor]
@@ -292,12 +288,18 @@ class GameContainer() : InScene, IGameMode {
                     console.log("call elevator:",hero.group.o.position.x)
                     if (hero.group.o.position.x >= -1 &&
                         hero.group.o.position.x <= 1) {
-                        elevator.callButton(heroCurrentFloor())
+                        elevator.callButton(hero.onFloor())
                     }
                 }
                 Key.S -> {
-                    val heroFloor = heroCurrentFloor()
-                    npcs.filter { e -> e.value.n.onFloor() == heroFloor }.filter { e -> actorDistance(e.value.n.group.o, hero.group.o) < stunDistance }.forEach { e -> e.value.n.stun() }
+                    val heroFloor = hero.onFloor()
+                    val onFloor = npcs.filter { e -> e.value.n.onFloor() == heroFloor }
+                    val closeEnoughToStun = onFloor.filter { e -> actorDistance(e.value.n.group.o, hero.group.o) < stunDistance }
+                    console.log("Close", closeEnoughToStun)
+                    closeEnoughToStun.forEach { e ->
+                        console.log("stun",e.value.n)
+                        e.value.n.stun()
+                    }
                 }
                 Key.Up -> {
                     console.log("enter elevator:",elevator.isOpen(), hero.inElevator())
