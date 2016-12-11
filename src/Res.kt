@@ -27,6 +27,6 @@ val vicText = """An unassuming office building in any town in central Ohio just 
         the office remains a mystery, explained only as a series of clerical errors in official documentation"""
 val introText = """Saturday, August 5th, 1972.  Upon receiving reports of unexplained activity involving high voltage
         equipment in a central Ohio office building, you, intrepid reporter, vow to obtain the scoop of a lifetime.
-        Workers complaining of sullen men in dark suits, haunting sounds and fearful odors elude to "one room" where
+        Workers complaining of sullen men in dark suits, haunting sounds and fearful odors allude to "one room" where
         'they' carry out their sinister agenda.  Using arrow keys, 'C' to call an elevator, 'S' to stun with your camera
         flash, and 'Space' to interact, infiltrate the conspiracy and find the "one room".  The truth is out there."""
