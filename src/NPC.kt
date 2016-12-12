@@ -69,7 +69,7 @@ class PursueHeroNPCBehavior : NPCBehavior {
                 if (n.moving) {
                     n.endMove()
                 }
-                if (e.onFloor() == npcFloor && e.isOpen() && e.occupied != null) {
+                if (e.onFloor() == npcFloor && e.isOpen() && e.occupied == null) {
                     n.getInElevator(e)
                     inElevator = true
                     return NPCState(n.nearHero(h), true, false)
