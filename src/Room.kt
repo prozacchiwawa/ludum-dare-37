@@ -214,7 +214,7 @@ class Room(floor : Int, door : Int, oneroom : FloorAndDoor, maxFloor : Int, hero
                     console.log("try open door on",floor)
                     if (floor != null) {
                         val door = floor.nearDoor(hero.group.o.position.x)
-                        if (door != null && floor.doorOpen(door)) {
+                        if (door != null) {
                             return enterDoor()
                         }
                     }

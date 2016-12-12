@@ -263,7 +263,7 @@ class GameContainer() : InScene, IGameMode {
                         console.log("try open door on",floor)
                         if (floor != null) {
                             val door = floor.nearDoor(hero.group.o.position.x)
-                            if (door != null && floor.doorOpen(door)) {
+                            if (door != null) {
                                 return enterDoor(scene, floor.number, door)
                             }
                         }
@@ -280,18 +280,6 @@ class GameContainer() : InScene, IGameMode {
                 }
                 Key.Left -> { if (!hero.inElevator()) { hero.beginMove(-1.0) } }
                 Key.Right -> { if (!hero.inElevator()) { hero.beginMove(1.0) } }
-                Key.Space -> {
-                    val floor = floors.get(hero.onFloor())
-                    console.log("try open door on",floor)
-                    if (floor != null) {
-                        val door = floor.nearDoor(hero.group.o.position.x)
-                        console.log("try open door",door,"on",floor)
-                        if (door != null) {
-                            console.log("toggle",door,"on",floor)
-                            floor.toggleDoor(door)
-                        }
-                    }
-                }
                 else -> { }
             }
         } else if (m.tag == GameUpdateMessageTag.KeyUp) {
