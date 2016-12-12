@@ -207,7 +207,7 @@ class GameContainer() : InScene, IGameMode {
         if (oldRoom != null) {
             return ModeChange(false, oldRoom)
         } else {
-            val room = Room(floor, door, numFloors, hero, camera)
+            val room = Room(floor, door, oneroom, numFloors, hero, camera)
             genroom.put(Pair<Int,Int>(floor, door), room)
             return ModeChange(false, room)
         }

@@ -36,7 +36,7 @@ fun clueText(floor : Int, room : Int, maxFloor : Int) : String {
     }
 }
 
-class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera) : InScene, IGameMode {
+class Room(floor : Int, door : Int, oneroom : FloorAndDoor, maxFloor : Int, hero : Hero, camera : Camera) : InScene, IGameMode {
     val light = newLight(0xffeeaa)
     val camera = camera
     val hero = hero
@@ -44,6 +44,7 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
     val floor = floor
     val door = door
     val maxFloor = maxFloor
+    val oneroom = oneroom
 
     var targetCameraX = 0.0
     var targetCameraY = 0.0
@@ -110,7 +111,7 @@ class Room(floor : Int, door : Int, maxFloor : Int, hero : Hero, camera : Camera
         (0..numProps-1).forEach { n ->
             val res = propRes()
             val useDims = dims.getOrElse(res, { Pair<Double,Double>(1.0,2.0) })
-            val prop = Prop(res, clueText(floor, door, maxFloor), useDims.first, useDims.second)
+            val prop = Prop(res, clueText(oneroom.floor, oneroom.door, maxFloor), useDims.first, useDims.second)
             prop.group.o.position.x = (rand() * 15.0) - 7.5
             prop.group.o.position.y = floor * floorHeight
             prop.group.o.position.z = 1.0
