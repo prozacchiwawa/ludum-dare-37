@@ -217,6 +217,7 @@ class NPC(res : String) : InScene {
     }
 
     fun getInElevator(e : Elevator) {
+        group.o.position.x = 0
         e.occupy(
                 { o ->
                     group.o.position.x = o.position.x
