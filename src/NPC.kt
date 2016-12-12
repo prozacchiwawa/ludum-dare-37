@@ -28,7 +28,7 @@ class RandomNPCBehavior(fd : FloorAndDoor, nearness : Double) : NPCBehavior {
                 if (n.moving) {
                     n.endMove()
                 }
-                if (e.onFloor() == npcFloor && e.isOpen()) {
+                if (e.onFloor() == npcFloor && e.isOpen() && e.occupied == null) {
                     n.getInElevator(e)
                     inElevator = true
                     return NPCState(n.nearHero(h), true, false)
@@ -39,15 +39,19 @@ class RandomNPCBehavior(fd : FloorAndDoor, nearness : Double) : NPCBehavior {
             return NPCState(n.nearHero(h), false, false)
         } else {
             val door = b.getDoor(fd.floor, fd.door)
-            if (e.isOpen() && inElevator) {
-                inElevator = false
-                n.leaveElevator(e)
-            } else if (Math.abs(door.position.x - n.group.o.position.x + 1.0) < 5.0) {
-                return NPCState(n.nearHero(h), false, true)
-            } else if (door.position.x < n.group.o.position.x) {
-                n.beginMove(-1.0)
-            } else {
-                n.beginMove(1.0)
+             if (inElevator) {
+                 if (e.isOpen()) {
+                     inElevator = false
+                     n.leaveElevator(e)
+                 }
+              } else {
+                 if (Math.abs(door.position.x-n.group.o.position.x+1.0) < 5.0) {
+                     return NPCState(n.nearHero(h), false, true)
+                 } else if (door.position.x < n.group.o.position.x) {
+                     n.beginMove(-1.0)
+                 } else {
+                     n.beginMove(1.0)
+                 }
             }
             return NPCState(n.nearHero(h,nearness), false, false)
         }
@@ -65,7 +69,7 @@ class PursueHeroNPCBehavior : NPCBehavior {
                 if (n.moving) {
                     n.endMove()
                 }
-                if (e.onFloor() == npcFloor && e.isOpen()) {
+                if (e.onFloor() == npcFloor && e.isOpen() && e.occupied != null) {
                     n.getInElevator(e)
                     inElevator = true
                     return NPCState(n.nearHero(h), true, false)
@@ -217,7 +221,6 @@ class NPC(res : String) : InScene {
     }
 
     fun getInElevator(e : Elevator) {
-        group.o.position.x = 0
         e.occupy(
                 { o ->
                     group.o.position.x = o.position.x

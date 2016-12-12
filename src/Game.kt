@@ -45,6 +45,7 @@ class GameContainer() : InScene, IGameMode {
 
     fun reset(scene : Scene) {
         numFloors = 6
+        oneroom = randomFloorAndDoor()
         removeFromScene(scene)
         elevator = Elevator(1, numFloors)
         hero = Hero()
