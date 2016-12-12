@@ -192,6 +192,12 @@ fun render(doUpdate : (GameUpdateMessage) -> Unit) {
     kotlin.browser.window.requestAnimationFrame { render(doUpdate) }
 }
 
+fun flashEffect() {
+    val flash = kotlin.browser.window.document.getElementById("flash")
+    flash?.setAttribute("style", "display: block")
+    kotlin.browser.window.setTimeout({ flash?.setAttribute("style", "display: none") }, 10)
+}
+
 fun main(args: Array<String>) {
     val gamerender = kotlin.browser.document.getElementById("gamerender")
     val rawWindow : dynamic = kotlin.browser.window
@@ -248,7 +254,7 @@ fun main(args: Array<String>) {
         }
 
         val stateStack : MutableList<IGameMode> = mutableListOf()
-        val game = GameContainer()
+        val game = GameContainer({ flashEffect() })
         stateStack.add(game)
         stateStack.add(WinMode(introText, "win", game))
         val gameState = {

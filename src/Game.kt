@@ -15,12 +15,13 @@ val clues : MutableSet<String> = mutableSetOf()
 /* Every second, there's a chance to spawn a new npc if there aren't already the maximum number.
  * if an NPC will spawn, it'll be near the user, slightly more likely in the direction of the one room.
  */
-class GameContainer() : InScene, IGameMode {
+class GameContainer(flashEffect : () -> Unit) : InScene, IGameMode {
     val light = newLight(0xeeeeee)
 
     val aspect =
             kotlin.browser.window.innerWidth / kotlin.browser.window.innerHeight
     val camera = newPerspectiveCamera(35.0, aspect, 0.1, 10000.0)
+    val flashEffect = flashEffect
 
     var targetCameraX = 0.0
     var targetCameraY = 3.0
@@ -243,6 +244,9 @@ class GameContainer() : InScene, IGameMode {
                     val onFloor = npcs.filter { e -> e.value.n.onFloor() == heroFloor }
                     val closeEnoughToStun = onFloor.filter { e -> actorDistance(e.value.n.group.o, hero.group.o) < stunDistance }
                     console.log("Close", closeEnoughToStun)
+                    if (closeEnoughToStun.count() > 0) {
+                        flashEffect()
+                    }
                     closeEnoughToStun.forEach { e ->
                         console.log("stun",e.value.n)
                         e.value.n.stun()
