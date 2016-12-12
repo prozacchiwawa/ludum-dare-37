@@ -247,6 +247,9 @@ class GameContainer() : InScene, IGameMode {
                         e.value.n.stun()
                     }
                 }
+                Key.C -> {
+                    console.log("elevator", elevator)
+                }
                 Key.Up -> {
                     console.log("enter elevator:",elevator.isOpen(), hero.inElevator())
                     if (hero.group.o.position.x >= -1 &&
