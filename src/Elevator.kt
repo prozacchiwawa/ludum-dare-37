@@ -6,12 +6,13 @@ package org.sample
 
 class Elevator(min : Int, max : Int) : InScene {
     var floor = min
-    var direction = false
+    var direction = true
     var open = -1.0
     val min = min
     val max = max
     val espeed = 2.5
     val openTime = 1.5
+    var floorCalls : MutableMap<Int, Boolean> = mutableMapOf()
 
     var occupied : ((o : dynamic) -> Unit)? = null
 
@@ -49,21 +50,10 @@ class Elevator(min : Int, max : Int) : InScene {
         scene.remove(group)
     }
 
-    fun callButton(newFloor : Int) {
+    fun callButton(newFloor : Int, up : Boolean) {
         if (occupied != null) { return }
-        if (floor > newFloor) {
-            direction = false
-        } else if (floor < newFloor) {
-            direction = true
-        } else {
-            if (open > 0.0) {
-                open = openTime
-            }
-        }
-    }
-
-    fun changeDirection(dir : Boolean) {
-        direction = dir
+        if (floor > newFloor) { direction = false } else { direction = true }
+        floorCalls.put(newFloor, up)
     }
 
     fun onFloor() : Int {
@@ -103,9 +93,18 @@ class Elevator(min : Int, max : Int) : InScene {
                 open = Math.max(open - time, 0.0)
                 if (open == 0.0) {
                     group.add(elevatorDoor)
-                    floor = if (direction) { Math.min(floor + 1, max) } else { Math.max(floor - 1, min) }
-                    if (floor == max) { direction = false }
-                    if (floor == min) { direction = true }
+                    val call = floorCalls.get(floor)
+                    if (call != null) {
+                        if (call) { direction = call }
+                    }
+                    if (direction) {
+                        floor = onFloor() + 2
+                    } else {
+                        floor = onFloor()
+                    }
+                    if (floor < min) { floor = min + 1; direction = true }
+                    else if (floor > max) { floor = max - 1; direction = false }
+                    open = -1.0
                 }
             }
         }

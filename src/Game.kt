@@ -237,13 +237,6 @@ class GameContainer() : InScene, IGameMode {
             return handleNPCs(scene, m)
         } else if (m.tag == GameUpdateMessageTag.KeyDown) {
             when (m.key) {
-                Key.C -> {
-                    console.log("call elevator:",hero.group.o.position.x)
-                    if (hero.group.o.position.x >= -1 &&
-                            hero.group.o.position.x <= 1) {
-                        elevator.callButton(hero.onFloor())
-                    }
-                }
                 Key.S -> {
                     val heroFloor = hero.onFloor()
                     val onFloor = npcs.filter { e -> e.value.n.onFloor() == heroFloor }
@@ -262,6 +255,9 @@ class GameContainer() : InScene, IGameMode {
                             elevator.onFloor() == hero.onFloor() &&
                             !hero.inElevator()) {
                         hero.getInElevator(elevator)
+                    } else if (hero.group.o.position.x >= -1 &&
+                            hero.group.o.position.x <= 1) {
+                        elevator.callButton(hero.onFloor(), true)
                     } else {
                         val floor = floors.get(hero.onFloor())
                         console.log("try open door on",floor)
@@ -277,6 +273,9 @@ class GameContainer() : InScene, IGameMode {
                     console.log("leave elevator:",elevator.isOpen(),hero.inElevator())
                     if (elevator.isOpen() && hero.inElevator()) {
                         hero.leaveElevator(elevator)
+                    } else if (hero.group.o.position.x >= -1 &&
+                        hero.group.o.position.x <= 1) {
+                        elevator.callButton(hero.onFloor(), false)
                     }
                 }
                 Key.Left -> { if (!hero.inElevator()) { hero.beginMove(-1.0) } }

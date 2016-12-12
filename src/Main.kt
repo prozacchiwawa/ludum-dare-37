@@ -154,6 +154,9 @@ class WinMode(text : String, divName : String, returnToMode: IGameMode) : InScen
     val textDiv = kotlin.browser.document.getElementById("${divName}-center")
 
     override fun update(scene : Scene, m : GameUpdateMessage) : ModeChange {
+        if (m.tag == GameUpdateMessageTag.KeyDown) {
+            shownTime = showTime
+        }
         val god = deathDiv
         shownTime += m.time
         god?.setAttribute("style", "display: flex")
